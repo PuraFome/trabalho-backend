@@ -2,8 +2,8 @@ require('dotenv').config({ quiet: true });
 
 const express = require('express');
 const cors = require('./middleware/cors');
-const pool = require('./database/connection');
 const protegerRota = require('./middleware/auth');
+const Health = require('./models/Health');
 
 const app = express();
 
@@ -12,7 +12,7 @@ app.use(express.json());
 
 app.get('/health', async (req, res) => {
   try {
-    await pool.query('SELECT 1');
+    await Health.ping();
     res.status(200).json({ status: 'ok', banco: 'ok' });
   } catch (e) {
     res.status(503).json({ status: 'degraded', banco: 'erro' });
