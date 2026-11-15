@@ -8,8 +8,17 @@ services:
     environment:
       NODE_ENV: development
     volumes:
-      - ./:/app
-      - node_modules:/app/node_modules
+      - type: bind
+        source: ./
+        target: /app
+      # nocopy: true evita que o volume nomeado seja semeado com o
+      # node_modules de PRODUÇÃO da imagem (sem nodemon), o que quebrava
+      # o modo dev após 'docker compose down -v'.
+      - type: volume
+        source: node_modules
+        target: /app/node_modules
+        volume:
+          nocopy: true
 
 volumes:
   node_modules:
