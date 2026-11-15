@@ -1,0 +1,2 @@
+-- Placeholder for database seed data
+-- This file will be populated in tasks 8 and 9

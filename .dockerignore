@@ -1,0 +1,10 @@
+node_modules
+.git
+.env
+.omo
+.codegraph
+testes
+Dockerfile*
+docker-compose*
+*.md
+npm-debug.log

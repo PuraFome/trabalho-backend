@@ -1,0 +1,2 @@
+-- Placeholder for database schema
+-- This file will be populated in task 7
