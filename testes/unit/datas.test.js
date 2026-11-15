@@ -126,9 +126,24 @@ describe('utils/datas.js', () => {
       assert.deepEqual(r, { inicio: '2026-09-05', fim: '2026-09-20' });
     });
 
-    test('Fevereiro bissexto → Janeiro', () => {
+    test('Fevereiro bissexto → Janeiro completo (31 dias)', () => {
       const r = periodoAnterior('2028-02-01', '2028-02-29');
-      assert.deepEqual(r, { inicio: '2028-01-01', fim: '2028-01-29' });
+      assert.deepEqual(r, { inicio: '2028-01-01', fim: '2028-01-31' });
+    });
+
+    test('Novembro (30) → Outubro completo (31) — regressão F3', () => {
+      const r = periodoAnterior('2026-11-01', '2026-11-30');
+      assert.deepEqual(r, { inicio: '2026-10-01', fim: '2026-10-31' });
+    });
+
+    test('Junho (30) → Maio completo (31)', () => {
+      const r = periodoAnterior('2026-06-01', '2026-06-30');
+      assert.deepEqual(r, { inicio: '2026-05-01', fim: '2026-05-31' });
+    });
+
+    test('Julho (31) → Junho completo (30)', () => {
+      const r = periodoAnterior('2026-07-01', '2026-07-31');
+      assert.deepEqual(r, { inicio: '2026-06-01', fim: '2026-06-30' });
     });
   });
 

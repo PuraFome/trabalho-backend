@@ -27,35 +27,35 @@ class Relatorio {
     const [entradasAtual] = await pool.query(queryEntradas, [usuarioId, inicio, fim]);
     const [entradasAnterior] = await pool.query(queryEntradas, [usuarioId, inicioAnterior, fimAnterior]);
 
-    const saidasAtualNum = saidasAtual.map(row => ({
-      id: row.id,
-      nome: row.nome,
-      total: Number(row.total)
-    }));
+    const compararComAnterior = (atualRows, anteriorRows) => {
+      const atualNum = atualRows.map(row => ({
+        id: row.id,
+        nome: row.nome,
+        total: Number(row.total)
+      }));
+      const anteriorMap = new Map(anteriorRows.map(row => [row.id, Number(row.total)]));
+      const total = atualNum.reduce((sum, c) => sum + c.total, 0);
 
-    const saidasAnteriorMap = new Map(saidasAnterior.map(row => [row.id, Number(row.total)]));
-    const totalSaidasAtual = saidasAtualNum.reduce((sum, c) => sum + c.total, 0);
+      return atualNum.map(cat => {
+        const anterior = anteriorMap.get(cat.id) || 0;
+        const variacao = anterior === 0 ? null : Number((((cat.total - anterior) / anterior) * 100).toFixed(2));
+        const percentual = total === 0 ? 0 : Number(((cat.total / total) * 100).toFixed(2));
+        return {
+          id: cat.id,
+          nome: cat.nome,
+          total: cat.total,
+          percentual,
+          anterior,
+          variacao
+        };
+      });
+    };
 
-    const saidasComComparacao = saidasAtualNum.map(cat => {
-      const anterior = saidasAnteriorMap.get(cat.id) || 0;
-      const variacao = anterior === 0 ? null : Number((((cat.total - anterior) / anterior) * 100).toFixed(2));
-      const percentual = totalSaidasAtual === 0 ? 0 : Number(((cat.total / totalSaidasAtual) * 100).toFixed(2));
-      return {
-        id: cat.id,
-        nome: cat.nome,
-        total: cat.total,
-        percentual,
-        anterior,
-        variacao
-      };
-    });
+    const saidasComComparacao = compararComAnterior(saidasAtual, saidasAnterior);
+    const entradasComComparacao = compararComAnterior(entradasAtual, entradasAnterior);
 
-    const entradasAtualNum = entradasAtual.map(row => ({
-      id: row.id,
-      nome: row.nome,
-      total: Number(row.total)
-    }));
-    const totalEntradasAtual = entradasAtualNum.reduce((sum, c) => sum + c.total, 0);
+    const totalSaidasAtual = saidasComComparacao.reduce((sum, c) => sum + c.total, 0);
+    const totalEntradasAtual = entradasComComparacao.reduce((sum, c) => sum + c.total, 0);
 
     return {
       saidas: {
@@ -64,7 +64,7 @@ class Relatorio {
       },
       entradas: {
         total: Number(totalEntradasAtual.toFixed(2)),
-        categorias: entradasAtualNum
+        categorias: entradasComComparacao
       }
     };
   }

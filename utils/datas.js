@@ -74,9 +74,22 @@ function deslocarMes(isoStr, n) {
 }
 
 function periodoAnterior(inicio, fim) {
+  const [anoInicio, mesInicio, diaInicio] = inicio.split('-').map(Number);
+  const [anoFim, mesFim, diaFim] = fim.split('-').map(Number);
+  const intervaloEhMesCompleto = diaInicio === 1 && diaFim === ultimoDiaDoMes(anoFim, mesFim - 1);
+
+  if (!intervaloEhMesCompleto) {
+    return {
+      inicio: deslocarMes(inicio, -1),
+      fim: deslocarMes(fim, -1)
+    };
+  }
+
+  const inicioAnterior = deslocarMes(inicio, -1);
+  const [anoAnterior, mesAnterior] = inicioAnterior.split('-').map(Number);
   return {
-    inicio: deslocarMes(inicio, -1),
-    fim: deslocarMes(fim, -1)
+    inicio: inicioAnterior,
+    fim: `${anoAnterior}-${String(mesAnterior).padStart(2, '0')}-${ultimoDiaDoMes(anoAnterior, mesAnterior - 1)}`
   };
 }
 
