@@ -4,8 +4,9 @@
 > 1. Banco limpo: `docker compose down -v && docker compose up -d --build`  
 > 2. Aguardar `db` e `api` ficarem `healthy` (`docker compose ps`)  
 > 3. `BASE=http://localhost:3000`  
-> 4. Copiar e colar os blocos abaixo **em sequência** no terminal.  
-> 5. O snippet a seguir captura o token automaticamente (requer `jq` ou `node`):  
+> 4. Exporte o `.env` (necessário para assinar o token expirado da seção E): `set -a; . ./.env; set +a`  
+> 5. Copiar e colar os blocos abaixo **em sequência** no terminal.  
+> 6. O snippet a seguir captura o token automaticamente (requer `jq` ou `node`):  
 >    ```bash
 >    TOKEN=$(curl -s -X POST "$BASE/auth/login" -H 'Content-Type: application/json' -d '{"email":"ana@email.com","senha":"Ana@1234"}' | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).token)}catch{}})")
 >    ```
@@ -28,9 +29,9 @@ curl -s -w "\nHTTP %{http_code}" "$BASE/health"
 ```bash
 TS=$(date +%s)
 EMAIL1="demo1_${TS}@email.com"
-CPF1="52998224725"   # CPF válido (Ana)
+CPF1="24681357928"   # CPF válido e NÃO usado no seed (evita 409)
 EMAIL2="demo2_${TS}@email.com"
-CPF2="11144477735"   # CPF válido (Bruno)
+CPF2="13579246828"   # CPF válido e NÃO usado no seed
 
 curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
   -H 'Content-Type: application/json' \
@@ -47,10 +48,11 @@ curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
 ## C) Duplicidade — e-mail/CPF (409)
 
 ```bash
-# E-mail duplicado (case-insensitive)
+# E-mail duplicado (case-insensitive) — CPF válido e livre para que o 409 seja
+# atribuído ao e-mail, não à validação de CPF
 curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
   -H 'Content-Type: application/json' \
-  -d "{\"nome\":\"Outro\",\"email\":\"${EMAIL1^^}\",\"cpf\":\"99999999999\",\"senha\":\"Demo@1234\"}"
+  -d "{\"nome\":\"Outro\",\"email\":\"${EMAIL1^^}\",\"cpf\":\"86429753182\",\"senha\":\"Demo@1234\"}"
 
 # CPF duplicado (com pontuação)
 curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
@@ -69,10 +71,10 @@ curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
   -H 'Content-Type: application/json' \
   -d '{"nome":"X","email":"x@x.com","cpf":"529.982.247-24","senha":"Demo@1234"}'
 
-# Senha fraca (sem número)
+# Senha fraca (sem número) — CPF válido e livre para isolar a falha de senha
 curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
   -H 'Content-Type: application/json' \
-  -d '{"nome":"X","email":"y@y.com","cpf":"11144477735","senha":"SenhaFraca"}'
+  -d '{"nome":"X","email":"y@y.com","cpf":"97531864282","senha":"SenhaFraca"}'
 
 # Campos vazios
 curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
@@ -168,10 +170,17 @@ curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/categorias/3" -H "Authorizatio
 # Esperado: 409
 
 # PUT mudar tipo de categoria com lançamentos → 409
+# (usa Salário id=1: entrada, sem classificação e COM lançamentos)
+curl -s -w "\nHTTP %{http_code}" -X PUT "$BASE/categorias/1" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"tipo":"saida"}'
+# Esperado: 409 (existem lançamentos vinculados a esta categoria)
+
+# Validação: entrada não pode ter classificação (Alimentação id=3 tem classificação)
 curl -s -w "\nHTTP %{http_code}" -X PUT "$BASE/categorias/3" \
   -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
   -d '{"tipo":"entrada"}'
-# Esperado: 409
+# Esperado: 400 (Entradas não podem ter classificação.)
 ```
 
 ---
@@ -234,17 +243,19 @@ curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/fontes-destinos/$CART_ID" -H "
 ## H) Lançamentos (CRUD + parcelamento + filtros + resumo)
 
 ```bash
-# IDs do seed (Ana): categoria Lazer=7, Cartão Nubank=3
-# POST lançamento único
-curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/lancamentos" \
+# IDs do seed (Ana): categoria Lazer=7, Cartão Nubank=3, Outras saídas=9
+# POST lançamento único → 201 {id,...} (captura o id)
+LANC_ID=$(curl -s -X POST "$BASE/lancamentos" \
   -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
-  -d '{"tipo":"saida","descricao":"Compra única","valor":150.50,"data":"2026-01-15","categoriaId":7,"fonteDestinoId":1}'
-# Esperado: 201
+  -d '{"tipo":"saida","descricao":"Compra única","valor":150.50,"data":"2026-01-15","categoriaId":7,"fonteDestinoId":1}' | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).id)}catch{}})")
+echo "LANC_ID=$LANC_ID"
 
 # POST lançamento PARCELADO 10x no cartão (Nubank id=3, categoria Outras saídas id=9)
-curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/lancamentos" \
+PARCELA_JSON=$(curl -s -X POST "$BASE/lancamentos" \
   -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
-  -d '{"tipo":"saida","descricao":"Notebook Parcelado","valor":3000,"data":"2026-01-20","categoriaId":9,"fonteDestinoId":3,"parcelas":10}'
+  -d '{"tipo":"saida","descricao":"Notebook Parcelado","valor":3000,"data":"2026-01-20","categoriaId":9,"fonteDestinoId":3,"parcelas":10}')
+echo "$PARCELA_JSON" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d);console.log('PARCELA_ID='+r.id+' quantidade='+r.quantidade+' grupo='+r.grupo)})"
+PARCELA_ID=$(echo "$PARCELA_JSON" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).id)}catch{}})")
 # Esperado: 201 com {id, quantidade:10, grupo:"<uuid>"}
 
 # Captura grupo do parcelamento
@@ -263,8 +274,7 @@ curl -s -w "\nHTTP %{http_code}" "$BASE/lancamentos?inicio=2000-01-01&fim=2099-1
 curl -s -w "\nHTTP %{http_code}" "$BASE/lancamentos?pagina=2" -H "Authorization: Bearer $TOKEN"
 # Esperado: 200 (itens pode ser [])
 
-# GET por ID
-LANC_ID=$(curl -s "$BASE/lancamentos?inicio=2000-01-01&fim=2099-12-31" -H "Authorization: Bearer $TOKEN" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).itens[0].id)}catch{}})")
+# GET por ID (o "Compra única" recém-criado)
 curl -s -w "\nHTTP %{http_code}" "$BASE/lancamentos/$LANC_ID" -H "Authorization: Bearer $TOKEN"
 # Esperado: 200 com item completo
 
@@ -278,9 +288,9 @@ curl -s -w "\nHTTP %{http_code}" -X PUT "$BASE/lancamentos/$LANC_ID" \
 curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/lancamentos/$LANC_ID" -H "Authorization: Bearer $TOKEN"
 # Esperado: 204
 
-# DELETE grupo inteiro (todasParcelas=true)
-curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/lancamentos/$LANC_ID?todasParcelas=true" -H "Authorization: Bearer $TOKEN"
-# Esperado: 204 e grupo zerado no banco
+# DELETE grupo inteiro (todasParcelas=true) usando a 1ª parcela do "Notebook Parcelado"
+curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/lancamentos/$PARCELA_ID?todasParcelas=true" -H "Authorization: Bearer $TOKEN"
+# Esperado: 204 e as 10 parcelas do grupo zeradas no banco
 ```
 
 ---
@@ -335,18 +345,22 @@ TOKEN2=$(curl -s -X POST "$BASE/auth/login" \
   -H 'Content-Type: application/json' \
   -d '{"email":"bruno@email.com","senha":"Bruno@1234"}' | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).token)}catch{}})")
 
+# Captura um lançamento REAL de Ana (seed) — o LANC_ID da seção H já foi excluído
+ANA_LANC_ID=$(curl -s "$BASE/lancamentos?inicio=2000-01-01&fim=2099-12-31" -H "Authorization: Bearer $TOKEN" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).itens[0].id)}catch{}})")
+echo "ANA_LANC_ID=$ANA_LANC_ID"
+
 # GET lançamento do usuário 1 com token do usuário 2
-curl -s -w "\nHTTP %{http_code}" "$BASE/lancamentos/$LANC_ID" -H "Authorization: Bearer $TOKEN2"
+curl -s -w "\nHTTP %{http_code}" "$BASE/lancamentos/$ANA_LANC_ID" -H "Authorization: Bearer $TOKEN2"
 # Esperado: 404
 
 # PUT lançamento do usuário 1 com token do usuário 2
-curl -s -w "\nHTTP %{http_code}" -X PUT "$BASE/lancamentos/$LANC_ID" \
+curl -s -w "\nHTTP %{http_code}" -X PUT "$BASE/lancamentos/$ANA_LANC_ID" \
   -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN2" \
   -d '{"descricao":"Tentativa"}'
 # Esperado: 404
 
 # DELETE lançamento do usuário 1 com token do usuário 2
-curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/lancamentos/$LANC_ID" -H "Authorization: Bearer $TOKEN2"
+curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/lancamentos/$ANA_LANC_ID" -H "Authorization: Bearer $TOKEN2"
 # Esperado: 404
 
 # PUT categoria do usuário 1 (id=3 Alimentação) com token do usuário 2

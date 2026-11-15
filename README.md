@@ -113,7 +113,7 @@ curl -s http://localhost:3000/health
 # {"status":"ok","banco":"ok"}
 ```
 
-> **Nota:** O `package-lock.json` **não** é versionado; por isso o primeiro `npm install` (não `npm ci`).
+> **Nota:** O `package-lock.json` **é** versionado (builds reprodutíveis com `npm ci`). Use `npm install` apenas para atualizar dependências.
 
 ---
 
