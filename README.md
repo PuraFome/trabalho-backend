@@ -147,9 +147,10 @@ Copie de `.env.example` e preencha. **Nunca commite o `.env` real.**
 | `DB_NAME` | Nome do banco | `api_financas` |
 | `JWT_SECRET` | Segredo HS256 (32+ chars) | `frase_longa_e_dificil_de_adivinhar_com_32_ou_mais_caracteres` |
 | `BCRYPT_ROUNDS` | Cost do bcrypt | `10` |
-| `CORS_ORIGIN` | Origens permitidas (CSV) | `http://localhost:4200` |
+| `CORS_ORIGIN` | Origens permitidas (CSV). **Em produção (Render)** deve ser `https://SEU_USUARIO.github.io`. **Regra:** o Origin header tem apenas `scheme://host` (sem path), então `https://user.github.io/repo` **não** corresponde. Em desenvolvimento local: `http://localhost:4200,https://SEU_USUARIO.github.io` |
 
 > **Por que `JWT_SECRET` no `.env`?** Segurança: nunca hardcode secrets. O middleware `express-jwt` falha rápido se ausente.
+> **Em produção:** `PORT`, `DB_*`, e `JWT_SECRET` vêm do ambiente (Render). `CORS_ORIGIN` deve ser `https://SEU_USUARIO.github.io` (o host `<user>.github.io`, sem o nome do repositório).
 
 ---
 
@@ -209,8 +210,51 @@ trabalho-backend/
 ├── Dockerfile            # Multi-stage (deps → runtime)
 ├── docker-compose.yml    # db (MySQL 8.4) + api + healthchecks
 ├── docker-compose.override.yml # Dev: bind mount + hot reload
+├── docs/                 # Frontend estático (GitHub Pages source)
+│   ├── index.html        # Shell HTML com abas (Login, Lançamentos, Relatórios)
+│   ├── styles.css        # Reset mínimo + tipografia base (16px)
+│   ├── config.js         # Resolve a base da API (local x produção)
+│   ├── app.js            # Auth, lançamentos e relatórios (scripts clássicos)
+│   ├── README.md         # Documentação do frontend
+│   └── .nojekyll         # Desativa Jekyll no GitHub Pages
+├── tools/
+│   └── serve-front.mjs   # Servidor estático Node puro (porta 4200)
 └── README.md             # Este arquivo
 ```
+
+---
+
+## Frontend (docs/)
+
+O frontend é uma aplicação estática, zero-build e sem dependências, publicada pelo **GitHub Pages** a partir da pasta `/docs`.
+
+### Servir localmente
+
+Na raiz do repositório:
+
+```bash
+node tools/serve-front.mjs
+```
+
+O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://localhost:4200**.
+
+> A API precisa estar de pé em `http://localhost:3000` (veja Setup acima). O `docs/config.js` resolve a base automaticamente: em `localhost`/porta `4200` usa `http://localhost:3000`; em qualquer outro host usa `PROD_API_BASE` — ajuste essa constante para a URL do Render antes do deploy.
+
+### GitHub Pages
+
+- **Source:** branch principal, pasta **`/docs`** (Settings → Pages → Build and deployment → Deploy from a branch → `/docs`).
+- **URL:** `https://SEU_USUARIO.github.io/trabalho-backend/`
+- `docs/.nojekyll` desativa o processamento Jekyll do GitHub Pages.
+- No backend, inclua a origem do Pages em `CORS_ORIGIN` (ex.: `https://SEU_USUARIO.github.io` — apenas `scheme://host`, **sem** o path do repositório).
+
+### Configuração de Produção
+
+- **`docs/config.js`** — edite a constante `PROD_API_BASE` para a URL da API no Render (ex.: `https://seu-app.onrender.com`).
+- **Backend `.env` (produção)** — `CORS_ORIGIN=https://SEU_USUARIO.github.io` (host apenas, sem path).
+
+### Login de demonstração
+
+Use o usuário do seed: `ana@email.com` / `Ana@1234`.
 
 ---
 

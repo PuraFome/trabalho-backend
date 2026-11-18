@@ -1,0 +1,52 @@
+# Frontend — Finanças Pessoais
+
+Frontend estático, zero-build e sem dependências, publicado pelo GitHub Pages a partir da pasta `/docs` deste repositório.
+
+## Servir localmente
+
+Na raiz do repositório:
+
+```bash
+node tools/serve-front.mjs
+```
+
+O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://localhost:4200**.
+
+Alternativa com qualquer servidor estático:
+
+```bash
+npx serve docs -l 4200
+```
+
+> A API precisa estar de pé em `http://localhost:3000` (veja o README da raiz). O `docs/config.js` resolve a base automaticamente: em `localhost`/porta `4200` usa `http://localhost:3000`; em qualquer outro host usa `PROD_API_BASE` — ajuste essa constante para a URL do Render antes do deploy.
+
+## GitHub Pages
+
+- **Source:** branch principal, pasta **`/docs`** (Settings → Pages → Build and deployment → Deploy from a branch → `/docs`).
+- **URL:** `https://SEU_USUARIO.github.io/trabalho-backend/`
+- `docs/.nojekyll` desativa o processamento Jekyll do GitHub Pages.
+- No backend, inclua a origem do Pages em `CORS_ORIGIN` (ex.: `https://SEU_USUARIO.github.io` — apenas `scheme://host`, **sem** o path do repositório).
+
+## Estrutura
+
+```
+docs/
+├── index.html      # Shell HTML com abas (Login, Lançamentos, Relatórios)
+├── styles.css      # Reset mínimo + tipografia base (16px)
+├── config.js       # Resolve a base da API (local x produção)
+├── app.js          # Auth, lançamentos e relatórios (scripts clássicos)
+├── README.md       # Este arquivo
+└── .nojekyll       # Desativa Jekyll no GitHub Pages
+```
+
+## Login de demonstração
+
+Use o usuário do seed: `ana@email.com` / `Ana@1234`.
+
+## Autenticação e trade-off de segurança (localStorage/XSS)
+
+O token JWT retornado por `POST /auth/login` é guardado em `localStorage` (`docs/app.js`: `getToken`/`setToken`/`clearToken`).
+
+**Trade-off conhecido:** qualquer script executado na página consegue ler `localStorage`; portanto, um XSS bem-sucedido pode exfiltrar o token. Isso é **aceitável para esta demonstração acadêmica** (front estático, sem backend próprio para cookies), mas **não** é a recomendação para produção. Em um sistema real, prefira cookie `HttpOnly` + `Secure` + `SameSite` (não legível por JavaScript) e/ou tokens de curta duração com refresh.
+
+Mitigações já presentes: todo texto vindo da API é escapado antes de ir para o DOM (`escapeHtml`), e o token é removido no logout ou em respostas 401. Ainda assim, o risco residual de XSS existe e está documentado aqui como decisão consciente do projeto.
