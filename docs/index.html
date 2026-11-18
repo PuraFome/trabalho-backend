@@ -55,6 +55,8 @@
           <li><a href="#exemplos">Exemplos</a></li>
           <li><a href="#erros">Formato de erro</a></li>
           <li><a href="#cors">CORS</a></li>
+          <li><a href="#checklist">Checklist</a></li>
+          <li><a href="#avaliacao">Avaliação</a></li>
           <li><a href="#demo">Demonstração</a></li>
         </ul>
       </nav>
@@ -206,6 +208,247 @@ Content-Type: application/json
         <pre><code>CORS_ORIGIN=https://SEU_USUARIO.github.io</code></pre>
         <p>Em desenvolvimento local: <code>http://localhost:4200,https://SEU_USUARIO.github.io</code></p>
       </div>
+    </section>
+
+    <section id="checklist">
+      <h2>Checklist final do grupo</h2>
+      <p>Os 12 itens de aceite do projeto, cada um com o comando exato para verificação. A API precisa estar de pé (<code>docker compose up -d --build</code>). Prepare a sessão antes de rodar:</p>
+      <pre><code>BASE=http://localhost:3000
+TOKEN=$(curl -s -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
+  -d '{"email":"ana@email.com","senha":"Ana@1234"}' \
+  | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).token))")
+TOKEN2=$(curl -s -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
+  -d '{"email":"bruno@email.com","senha":"Bruno@1234"}' \
+  | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).token))")
+set -a; . ./.env; set +a   # carrega JWT_SECRET (usado no item 5)</code></pre>
+
+      <h3>1. Cadastrar o mesmo e-mail com letras maiúsculas diferentes → 409</h3>
+      <pre><code>curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
+  -H 'Content-Type: application/json' \
+  -d '{"nome":"Outro","email":"ANA@EMAIL.COM","cpf":"86429753182","senha":"Demo@1234"}'
+# Esperado: HTTP 409 {"erro":"Conflito.","campos":{"email":"E-mail já cadastrado."}}
+# Normalização: trim + toLowerCase antes de gravar/buscar (routes/auth.js)</code></pre>
+
+      <h3>2. Cadastrar o mesmo CPF com e sem pontuação → 409</h3>
+      <pre><code>curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/auth/cadastro" \
+  -H 'Content-Type: application/json' \
+  -d '{"nome":"Outro","email":"outro2@email.com","cpf":"529.982.247-25","senha":"Demo@1234"}'
+# Esperado: HTTP 409 {"erro":"Conflito.","campos":{"cpf":"CPF já cadastrado."}}
+# Normalização: remove tudo que não é dígito (routes/auth.js)</code></pre>
+
+      <h3>3. O banco impede duplicatas (mesmo sem SELECT prévio)</h3>
+      <pre><code>npm run db:shell
+# No prompt mysql&gt;, force um INSERT duplicado:
+INSERT INTO usuarios (nome,email,cpf,senha_hash) VALUES ('X','ana@email.com','12345678909','x');
+# Esperado: ERROR 1062 (23000): Duplicate entry 'ana@email.com' for key 'uq_usuarios_email'</code></pre>
+
+      <h3>4. Nenhuma resposta da API contém senha_hash</h3>
+      <pre><code>curl -s "$BASE/auth/me" -H "Authorization: Bearer $TOKEN" | grep -c senha_hash
+curl -s -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
+  -d '{"email":"ana@email.com","senha":"Ana@1234"}' | grep -c senha_hash
+# Esperado: 0 em ambos (nenhuma ocorrência de senha_hash nas respostas)</code></pre>
+
+      <h3>5. Sem token ou token expirado → 401 em JSON (não uma página HTML)</h3>
+      <pre><code># Sem token
+curl -s -w "\nHTTP %{http_code}" "$BASE/categorias"
+# Esperado: HTTP 401 {"erro":"Token ausente, inválido ou expirado."}
+
+# Token expirado (assinado com JWT_SECRET do .env)
+EXP=$(node -e "console.log(require('jsonwebtoken').sign({id:1},process.env.JWT_SECRET,{expiresIn:'-1s'}))")
+curl -s -w "\nHTTP %{http_code}" "$BASE/categorias" -H "Authorization: Bearer $EXP"
+# Esperado: HTTP 401 JSON</code></pre>
+
+      <h3>6. Trocar o id na URL não dá acesso a dados de outro usuário</h3>
+      <pre><code># TOKEN2 é do Bruno; os recursos abaixo pertencem à Ana
+curl -s -w "\nHTTP %{http_code}" -X PUT "$BASE/categorias/3" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN2" -d '{"nome":"Hack"}'
+# Esperado: HTTP 404 (registro de outro usuário "não existe")
+
+curl -s -w "\nHTTP %{http_code}" -X DELETE "$BASE/fontes-destinos/1" \
+  -H "Authorization: Bearer $TOKEN2"
+# Esperado: HTTP 404</code></pre>
+
+      <h3>7. Um lançamento de saída não aceita categoria de entrada</h3>
+      <pre><code>curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/lancamentos" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"tipo":"saida","descricao":"Erro","valor":100,"data":"2026-01-10","categoriaId":1,"fonteDestinoId":1}'
+# Esperado: HTTP 400 {"erro":"Dados inválidos.","campos":{"categoriaId":"A categoria informada é de entrada, mas o lançamento é de saída."}}</code></pre>
+
+      <h3>8. R$ 100,00 em 3× gera parcelas que somam exatamente R$ 100,00</h3>
+      <pre><code># Teste unitário da divisão em centavos:
+npm test
+
+# Via API + banco (1ª parcela recebe o resto):
+GRUPO=$(curl -s -X POST "$BASE/lancamentos" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"tipo":"saida","descricao":"Teste 100/3","valor":100,"data":"2026-01-20","categoriaId":9,"fonteDestinoId":3,"parcelas":3}' \
+  | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).grupo))")
+echo "Grupo: $GRUPO"
+npm run db:shell
+# mysql&gt; SELECT parcela_atual,total_parcelas,valor FROM lancamentos
+#         WHERE grupo_parcelamento='COLE_O_GRUPO_AQUI' ORDER BY parcela_atual;
+# Esperado: 33.34 | 33.33 | 33.33  → soma = 100.00</code></pre>
+
+      <h3>9. Compra no dia do fechamento aparece na fatura do mês seguinte</h3>
+      <pre><code># Cartão Nubank (id=3) tem dia_fechamento=3. Compra EXATAMENTE no dia 3:
+curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/lancamentos" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"tipo":"saida","descricao":"No fechamento","valor":50,"data":"2026-11-03","categoriaId":9,"fonteDestinoId":3}'
+
+# Confira em qual fatura (referência AAAA-MM) a compra caiu:
+curl -s "$BASE/relatorios/faturas?meses=12" -H "Authorization: Bearer $TOKEN"
+# Esperado: compra de 2026-11-03 (dia == fechamento) → referência 2026-12 (mês seguinte)
+# Regra oficial em utils/faturas.js (Tabela 11.3); coberta por npm test</code></pre>
+
+      <h3>10. Relatórios devolvem números (980.5), não textos ("980.50")</h3>
+      <pre><code>curl -s "$BASE/relatorios/categorias?inicio=2026-01-01&amp;fim=2026-12-31" \
+  -H "Authorization: Bearer $TOKEN" \
+  | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d);console.log('saidas.total:',typeof r.saidas.total);console.log('1a categoria:',typeof (r.saidas.categorias[0]||{}).total)})"
+# Esperado: number / number (não string)</code></pre>
+
+      <h3>11. O .env não está no repositório; o .env.example está</h3>
+      <pre><code>git check-ignore .env &amp;&amp; echo ".env ignorado ✅"
+git ls-files --error-unmatch .env 2&gt;/dev/null &amp;&amp; echo "ERRO: .env versionado" || echo ".env fora do repo ✅"
+git ls-files --error-unmatch .env.example &amp;&amp; echo ".env.example versionado ✅"</code></pre>
+
+      <h3>12. Seguindo apenas o README, outra pessoa cria o banco e sobe a API</h3>
+      <pre><code>docker compose down -v
+cp .env.example .env      # edite JWT_SECRET (32+ caracteres)
+docker compose up -d --build
+docker compose ps         # db e api → healthy
+curl -s http://localhost:3000/health
+# Esperado: {"status":"ok","banco":"ok"}</code></pre>
+    </section>
+
+    <section id="avaliacao">
+      <h2>Critérios de avaliação</h2>
+      <p>Nota de <strong>100 pontos</strong>, mais até <strong>10 pontos extras</strong> pelo desafio (Tabela 11.6). Cada critério traz a referência no código e/ou o comando de verificação.</p>
+      <table>
+        <thead><tr><th>#</th><th>Critério</th><th>Pts</th><th>Como verificar (código / comando)</th></tr></thead>
+        <tbody>
+          <tr><td colspan="4"><strong>A. Usuários e autenticação — 25</strong></td></tr>
+          <tr>
+            <td>1</td>
+            <td>Cadastro com validações no servidor (campos, e-mail, CPF com dígitos verificadores, senha) e transação com categorias/fonte padrão</td>
+            <td>6</td>
+            <td><code>routes/auth.js</code>, <code>utils/cpf.js</code>, <code>models/Usuario.js</code> (transação); <code>npm test</code>; checklist <a href="#checklist">1–2</a></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>E-mail e CPF únicos por <code>UNIQUE</code> no banco, com normalização e resposta 409 indicando o campo</td>
+            <td>6</td>
+            <td><code>database/schema.sql</code> (<code>uq_usuarios_email</code>, <code>uq_usuarios_cpf</code>); checklist <a href="#checklist">1–3</a></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Senha com bcrypt, login com JWT e expiração, chave secreta no <code>.env</code></td>
+            <td>7</td>
+            <td><code>routes/auth.js</code> (bcrypt 39, JWT 72–76), <code>middleware/auth.js</code>; <code>POST /auth/login</code></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Rotas protegidas com express-jwt, tratamento do <code>UnauthorizedError</code> (401) e isolamento entre usuários (RF3)</td>
+            <td>6</td>
+            <td><code>middleware/auth.js</code>, <code>server.js</code>; checklist <a href="#checklist">5–6</a></td>
+          </tr>
+          <tr><td colspan="4"><strong>B. Cadastros e lançamentos — 25</strong></td></tr>
+          <tr>
+            <td>5</td>
+            <td>CRUD de categorias e de fontes/destinos com as regras de tipo, cartão, duplicidade e exclusão</td>
+            <td>8</td>
+            <td><code>routes/categorias.js</code>, <code>routes/fontesDestinos.js</code>, <code>models/</code></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>CRUD de lançamentos com validações (valor, data, compatibilidade de tipo, posse da categoria e da fonte/destino)</td>
+            <td>9</td>
+            <td><code>routes/lancamentos.js</code>; checklist <a href="#checklist">7</a></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Filtros por query parameters, paginação e resumo (entradas, saídas e saldo)</td>
+            <td>4</td>
+            <td><code>routes/lancamentos.js</code> (GET), <code>models/Lancamento.js</code> (listar)</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Compras parceladas, com divisão correta dos centavos e exclusão de todas as parcelas</td>
+            <td>4</td>
+            <td><code>utils/parcelas.js</code>, <code>models/Lancamento.js</code>; checklist <a href="#checklist">8</a></td>
+          </tr>
+          <tr><td colspan="4"><strong>C. Relatórios — 20</strong></td></tr>
+          <tr>
+            <td>9</td>
+            <td>Relatório por categoria com <code>SUM/GROUP BY</code>, percentuais e comparação com o período anterior</td>
+            <td>7</td>
+            <td><code>routes/relatorios.js</code>, <code>models/Relatorio.js</code>, <code>utils/datas.js</code> (período anterior)</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Relatório por fonte/destino (entradas, saídas e saldo das contas)</td>
+            <td>5</td>
+            <td><code>routes/relatorios.js</code>, <code>models/Relatorio.js</code></td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Previsão de faturas (regra de fechamento, parcelas futuras, limite utilizado e disponível)</td>
+            <td>8</td>
+            <td><code>utils/faturas.js</code>, <code>models/Relatorio.js</code>; checklist <a href="#checklist">9</a></td>
+          </tr>
+          <tr><td colspan="4"><strong>D. Organização e qualidade — 15</strong></td></tr>
+          <tr>
+            <td>12</td>
+            <td>Estrutura de pastas, <code>express.Router()</code> por recurso, SQL somente nas classes de <code>models/</code>, CommonJS</td>
+            <td>4</td>
+            <td>Árvore de pastas em <a href="#visao-geral">Visão geral</a>; <code>routes/*.js</code> delegam, <code>models/*.js</code> contêm o SQL</td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>Verbos HTTP, códigos de status e padrão único de resposta de erro</td>
+            <td>4</td>
+            <td><a href="#rotas">Referência de rotas</a>; <a href="#erros">Formato de erro</a> (<code>{erro, campos?}</code>)</td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td>Consultas parametrizadas (<code>?</code>), restrições no banco (FK, UNIQUE, CHECK) e tipos adequados para dinheiro</td>
+            <td>4</td>
+            <td><code>database/schema.sql</code> (FK/UNIQUE/CHECK, <code>DECIMAL</code>); <code>models/*.js</code> (prepared statements)</td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td><code>package.json</code> com scripts e nodemon, <code>.env.example</code>, <code>.gitignore</code>, <code>schema.sql</code>, <code>seed.sql</code>, README e arquivo de testes com todas as rotas</td>
+            <td>3</td>
+            <td><code>package.json</code>, <code>.env.example</code>, <code>.gitignore</code>, <code>database/</code>, <code>testes/requisicoes.md</code>; checklist <a href="#checklist">11–12</a></td>
+          </tr>
+          <tr><td colspan="4"><strong>E. Apresentação — 15</strong></td></tr>
+          <tr>
+            <td>16</td>
+            <td>Explicação do código-fonte (ambos os integrantes)</td>
+            <td>5</td>
+            <td>README → <em>Roteiro de Apresentação</em> (blocos 1–7)</td>
+          </tr>
+          <tr>
+            <td>17</td>
+            <td>Execução pela linha de comando (banco e API)</td>
+            <td>5</td>
+            <td>README → <em>Setup com Docker</em> / <em>Setup Local</em>; checklist <a href="#checklist">12</a></td>
+          </tr>
+          <tr>
+            <td>18</td>
+            <td>Demonstração de todos os itens obrigatórios do roteiro, dentro do tempo</td>
+            <td>5</td>
+            <td>README → <em>Roteiro de Apresentação</em> (≤10 min); <code>npm test</code>; <code>testes/requisicoes.md</code></td>
+          </tr>
+          <tr><td colspan="3"><strong>TOTAL</strong></td><td><strong>100</strong></td></tr>
+          <tr><td colspan="4"><strong>Desafio — Saúde financeira (até +10)</strong></td></tr>
+          <tr>
+            <td>+</td>
+            <td>Pelo menos 3 indicadores, uma projeção mês a mês e dicas geradas a partir dos dados</td>
+            <td>10</td>
+            <td><code>routes/saudeFinanceira.js</code>, <code>utils/saude.js</code>, <code>models/Saude.js</code>; <code>curl "$BASE/saude-financeira" -H "Authorization: Bearer $TOKEN"</code>; <code>npm test</code></td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="demo">
