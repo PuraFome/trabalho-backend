@@ -210,13 +210,16 @@ trabalho-backend/
 ├── Dockerfile            # Multi-stage (deps → runtime)
 ├── docker-compose.yml    # db (MySQL 8.4) + api + healthchecks
 ├── docker-compose.override.yml # Dev: bind mount + hot reload
-├── docs/                 # Frontend estático (GitHub Pages source)
-│   ├── index.html        # Shell HTML com abas (Login, Lançamentos, Relatórios)
+├── docs/                 # Site estático (GitHub Pages source)
+│   ├── index.html        # Documentação da API (visão geral, auth, rotas, exemplos, erros, CORS)
 │   ├── styles.css        # Reset mínimo + tipografia base (16px)
-│   ├── config.js         # Resolve a base da API (local x produção)
-│   ├── app.js            # Auth, lançamentos e relatórios (scripts clássicos)
-│   ├── README.md         # Documentação do frontend
-│   └── .nojekyll         # Desativa Jekyll no GitHub Pages
+│   ├── README.md         # Documentação do site (docs + demo)
+│   ├── .nojekyll         # Desativa Jekyll no GitHub Pages
+│   └── demo/             # Demonstração ao vivo (app financeira)
+│       ├── index.html    # Shell HTML com abas (Login, Lançamentos, Relatórios)
+│       ├── styles.css    # Estilos da aplicação
+│       ├── config.js     # Resolve a base da API (local x produção)
+│       └── app.js        # Auth, lançamentos e relatórios (scripts clássicos)
 ├── tools/
 │   └── serve-front.mjs   # Servidor estático Node puro (porta 4200)
 └── README.md             # Este arquivo
@@ -224,9 +227,12 @@ trabalho-backend/
 
 ---
 
-## Frontend (docs/)
+## Documentação e Demonstração (docs/)
 
-O frontend é uma aplicação estática, zero-build e sem dependências, publicada pelo **GitHub Pages** a partir da pasta `/docs`.
+A pasta `/docs` é um site estático, zero-build e sem dependências, publicado pelo **GitHub Pages**, com duas partes:
+
+- **`docs/index.html`** — **documentação da API** (visão geral, autenticação JWT, referência de rotas, exemplos, formato de erro, CORS e credenciais de demonstração).
+- **`docs/demo/`** — **demonstração ao vivo** da aplicação financeira (login, cadastro, lançamentos, relatórios), conectada à API publicada.
 
 ### Servir localmente
 
@@ -236,9 +242,12 @@ Na raiz do repositório:
 node tools/serve-front.mjs
 ```
 
-O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://localhost:4200**.
+O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://localhost:4200**:
 
-> A API precisa estar de pé em `http://localhost:3000` (veja Setup acima). O `docs/config.js` resolve a base automaticamente: em `localhost`/porta `4200` usa `http://localhost:3000`; em qualquer outro host usa `PROD_API_BASE` — ajuste essa constante para a URL do Render antes do deploy.
+- Documentação: **http://localhost:4200/**
+- Demonstração: **http://localhost:4200/demo/**
+
+> A API precisa estar de pé em `http://localhost:3000` (veja Setup acima). O `docs/demo/config.js` resolve a base automaticamente: em `localhost`/porta `4200` usa `http://localhost:3000`; em qualquer outro host usa `PROD_API_BASE` — ajuste essa constante para a URL do Render antes do deploy.
 
 ### GitHub Pages
 
@@ -249,7 +258,7 @@ O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://l
 
 ### Configuração de Produção
 
-- **`docs/config.js`** — edite a constante `PROD_API_BASE` para a URL da API no Render (ex.: `https://seu-app.onrender.com`).
+- **`docs/demo/config.js`** — edite a constante `PROD_API_BASE` para a URL da API no Render (ex.: `https://seu-app.onrender.com`).
 - **Backend `.env` (produção)** — `CORS_ORIGIN=https://SEU_USUARIO.github.io` (host apenas, sem path).
 
 ### Login de demonstração
