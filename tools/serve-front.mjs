@@ -48,9 +48,9 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   let pathname = url.pathname;
 
-  // Normalize: / -> /index.html
-  if (pathname === '/') {
-    pathname = '/index.html';
+  // Normalize: / -> /index.html, /dir/ -> /dir/index.html
+  if (pathname.endsWith('/')) {
+    pathname += 'index.html';
   }
 
   // Prevent directory traversal
