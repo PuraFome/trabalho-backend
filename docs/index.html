@@ -3,13 +3,223 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Documentação da API</title>
+  <title>Documentação da API — Finanças Pessoais</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Estilos da documentação — zero dependências, sem CDN */
+    :root {
+      --cor-primaria: #2563eb;
+      --cor-fundo: #fafafa;
+      --cor-texto: #1a1a1a;
+      --cor-borda: #e5e7eb;
+    }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: var(--cor-texto); background: var(--cor-fundo); margin: 0; }
+    header { background: #fff; border-bottom: 1px solid var(--cor-borda); padding: 1rem 0; position: sticky; top: 0; z-index: 10; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 1rem; }
+    .logo { font-size: 1.25rem; font-weight: 700; color: var(--cor-primaria); text-decoration: none; }
+    nav ul { list-style: none; display: flex; gap: 1.5rem; margin: 0; padding: 0; }
+    nav a { color: #374151; text-decoration: none; font-weight: 500; }
+    nav a:hover { color: var(--cor-primaria); }
+    main { padding: 2rem 0; }
+    section { margin-bottom: 3rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--cor-borda); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    p { margin-bottom: 1rem; }
+    a { color: var(--cor-primaria); }
+    code { background: #f3f4f6; padding: 0.125rem 0.375rem; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875rem; }
+    pre { background: #1f2937; color: #e5e7eb; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
+    pre code { background: transparent; padding: 0; color: inherit; font-size: inherit; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+    th, td { border: 1px solid var(--cor-borda); padding: 0.625rem 0.875rem; text-align: left; }
+    th { background: #f9fafb; font-weight: 600; }
+    tr:nth-child(even) { background: #f9fafb; }
+    .badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-sim { background: #fef2f2; color: #991b1b; }
+    .badge-nao { background: #f0fdf4; color: #166534; }
+    .card { background: #fff; border: 1px solid var(--cor-borda); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .footer { border-top: 1px solid var(--cor-borda); padding: 1.5rem 0; margin-top: 2rem; color: #6b7280; font-size: 0.875rem; }
+    .demo-link { display: inline-block; background: var(--cor-primaria); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 1rem; }
+    .demo-link:hover { background: #1d4ed8; }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>Documentação da API</h1>
-    <p>Conteúdo da documentação em construção.</p>
-    <p><a href="demo/">Abrir a demonstração</a></p>
+  <header>
+    <div class="container">
+      <a href="/" class="logo">API Finanças — Documentação</a>
+      <nav>
+        <ul>
+          <li><a href="#visao-geral">Visão geral</a></li>
+          <li><a href="#autenticacao">Autenticação</a></li>
+          <li><a href="#rotas">Referência de rotas</a></li>
+          <li><a href="#exemplos">Exemplos</a></li>
+          <li><a href="#erros">Formato de erro</a></li>
+          <li><a href="#cors">CORS</a></li>
+          <li><a href="#demo">Demonstração</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="visao-geral">
+      <h1>Documentação da API</h1>
+      <p>API REST completa para controle financeiro pessoal: autenticação JWT, CRUDs de categorias, fontes/destinos e lançamentos com parcelamento no cartão, três relatórios (por categoria, por fonte/destino, faturas futuras) e rota de saúde financeira (desafio).</p>
+      <h2>Visão geral</h2>
+      <p>A API foi desenvolvida com as seguintes características:</p>
+      <ul>
+        <li><strong>Sem ORM</strong> — SQL cru com <code>mysql2</code> e prepared statements (<code>?</code>).</li>
+        <li><strong>Autenticação stateless</strong> — JWT (HS256, 1h) + middleware <code>express-jwt</code>.</li>
+        <li><strong>Isolamento total</strong> — todo SQL filtra <code>usuario_id = req.auth.id</code>; acesso cruzado → <strong>404</strong>.</li>
+        <li><strong>Parcelamento real</strong> — divisão em centavos, resto na 1ª parcela, <code>grupo_parcelamento</code> UUID.</li>
+        <li><strong>Docker-first</strong> — <code>docker compose up -d --build</code> sobe DB + API com healthchecks.</li>
+      </ul>
+      <div class="card">
+        <h3>Stack</h3>
+        <p>Node.js 24 · Express 4 · mysql2 · bcrypt · jsonwebtoken · express-jwt · dotenv</p>
+      </div>
+      <h3>Como subir localmente</h3>
+      <pre><code># 1. Banco (Docker)
+docker compose up -d --build db
+
+# 2. API
+cp .env.example .env
+# edite .env → defina JWT_SECRET (32+ caracteres)
+npm install
+npm run dev
+
+# 3. Teste
+curl http://localhost:3000/health
+# {"status":"ok","banco":"ok"}</code></pre>
+      <p>Ou use <code>docker compose up -d --build</code> para subir banco e API juntos.</p>
+    </section>
+
+    <section id="autenticacao">
+      <h2>Autenticação</h2>
+      <p>A API usa JWT (HS256, expiração de 1h). O token deve ser enviado no header <code>Authorization: Bearer &lt;token&gt;</code> nas rotas protegidas.</p>
+      <h3>Endpoints de auth</h3>
+      <table>
+        <thead><tr><th>Método</th><th>Caminho</th><th>Corpo</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/auth/cadastro</code></td><td><code>{nome,email,cpf,senha}</code></td><td>201, 400, 409, 500</td></tr>
+          <tr><td>POST</td><td><code>/auth/login</code></td><td><code>{email,senha}</code></td><td>200, 401, 500</td></tr>
+          <tr><td>GET</td><td><code>/auth/me</code></td><td>— (requer token)</td><td>200, 401, 404</td></tr>
+        </tbody>
+      </table>
+      <h3>Credenciais de demonstração</h3>
+      <p>Use o usuário do seed para testar imediatamente:</p>
+      <table>
+        <thead><tr><th>Usuário</th><th>E-mail</th><th>Senha</th><th>CPF</th></tr></thead>
+        <tbody>
+          <tr><td>Ana Souza</td><td><code>ana@email.com</code></td><td><code>Ana@1234</code></td><td><code>52998224725</code></td></tr>
+          <tr><td>Bruno Lima</td><td><code>bruno@email.com</code></td><td><code>Bruno@1234</code></td><td><code>11144477735</code></td></tr>
+        </tbody>
+      </table>
+      <p class="text-muted" style="font-size:0.875rem;">⚠️ Dados de demonstração apenas. Não use em produção.</p>
+    </section>
+
+    <section id="rotas">
+      <h2>Referência de rotas</h2>
+      <table>
+        <thead><tr><th>Método</th><th>Caminho</th><th>Protegida</th><th>Corpo / Query</th><th>Status possíveis</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/health</code></td><td><span class="badge badge-nao">Não</span></td><td>—</td><td>200, 503</td></tr>
+          <tr><td>POST</td><td><code>/auth/cadastro</code></td><td><span class="badge badge-nao">Não</span></td><td><code>{nome,email,cpf,senha}</code></td><td>201, 400, 409, 500</td></tr>
+          <tr><td>POST</td><td><code>/auth/login</code></td><td><span class="badge badge-nao">Não</span></td><td><code>{email,senha}</code></td><td>200, 401, 500</td></tr>
+          <tr><td>GET</td><td><code>/auth/me</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>200, 401, 404</td></tr>
+          <tr><td>GET</td><td><code>/categorias</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?tipo=entrada|saida</code></td><td>200, 400, 401</td></tr>
+          <tr><td>POST</td><td><code>/categorias</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{nome,tipo,classificacao?}</code></td><td>201, 400, 409, 401</td></tr>
+          <tr><td>PUT</td><td><code>/categorias/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{nome?,tipo?,classificacao?}</code></td><td>200, 400, 404, 409, 401</td></tr>
+          <tr><td>DELETE</td><td><code>/categorias/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>204, 400, 404, 409, 401</td></tr>
+          <tr><td>GET</td><td><code>/fontes-destinos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?tipo=renda|conta|cartao_credito</code></td><td>200, 400, 401</td></tr>
+          <tr><td>POST</td><td><code>/fontes-destinos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{nome,tipo,dia_fechamento?,dia_vencimento?,limite?,reserva?}</code></td><td>201, 400, 409, 401</td></tr>
+          <tr><td>PUT</td><td><code>/fontes-destinos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{nome?,tipo?,dia_fechamento?,dia_vencimento?,limite?,reserva?}</code></td><td>200, 400, 404, 409, 401</td></tr>
+          <tr><td>DELETE</td><td><code>/fontes-destinos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>204, 400, 404, 409, 401</td></tr>
+          <tr><td>GET</td><td><code>/lancamentos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?inicio&fim&tipo&categoriaId&fonteDestinoId&pagina</code></td><td>200, 400, 401</td></tr>
+          <tr><td>GET</td><td><code>/lancamentos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>200, 400, 404, 401</td></tr>
+          <tr><td>POST</td><td><code>/lancamentos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{tipo,descricao,valor,data,categoriaId,fonteDestinoId,parcelas?}</code></td><td>201, 400, 404, 401</td></tr>
+          <tr><td>PUT</td><td><code>/lancamentos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{tipo?,descricao?,valor?,data?,categoriaId?,fonteDestinoId?}</code></td><td>200, 400, 404, 401</td></tr>
+          <tr><td>DELETE</td><td><code>/lancamentos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?todasParcelas=true</code></td><td>204, 400, 404, 401</td></tr>
+          <tr><td>GET</td><td><code>/relatorios/categorias</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>inicio,fim</code> (obrigatórios)</td><td>200, 400, 401</td></tr>
+          <tr><td>GET</td><td><code>/relatorios/fontes-destinos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>inicio,fim</code> (obrigatórios)</td><td>200, 400, 401</td></tr>
+          <tr><td>GET</td><td><code>/relatorios/faturas</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?meses=3</code> (1–12)</td><td>200, 400, 401</td></tr>
+          <tr><td>GET</td><td><code>/saude-financeira</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>200, 401</td></tr>
+        </tbody>
+      </table>
+      <p><em>Todas as rotas de dados exigem token JWT. A rota <code>/health</code> é pública (infraestrutura).</em></p>
+    </section>
+
+    <section id="exemplos">
+      <h2>Exemplos</h2>
+      <h3>Login</h3>
+      <pre><code>POST /auth/login
+Content-Type: application/json
+
+{ "email": "ana@email.com", "senha": "Ana@1234" }</code></pre>
+      <pre><code>// Resposta 200
+{ "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", "usuario": { "id": 1, "nome": "Ana Souza", "email": "ana@email.com" } }</code></pre>
+      <h3>Listagem de categorias</h3>
+      <pre><code>GET /categorias?tipo=saida
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+[ { "id": 1, "nome": "Alimentação", "tipo": "saida", "classificacao": "necessidade" } ]</code></pre>
+      <h3>Criação de lançamento</h3>
+      <pre><code>POST /lancamentos
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "tipo": "saida", "descricao": "Supermercado", "valor": 150.00, "data": "2026-11-10", "categoriaId": 1, "fonteDestinoId": 3 }</code></pre>
+      <pre><code>// Resposta 201
+{ "id": 42, "tipo": "saida", "descricao": "Supermercado", "valor": 150, "data": "2026-11-10", "categoriaId": 1, "fonteDestinoId": 3 }</code></pre>
+      <h3>Erro 400 / 401 / 404</h3>
+      <pre><code>// 400
+{ "erro": "Dados inválidos.", "campos": { "email": "E-mail obrigatório" } }
+
+// 401
+{ "erro": "Token ausente, inválido ou expirado." }
+
+// 404
+{ "erro": "Recurso não encontrado." }</code></pre>
+    </section>
+
+    <section id="erros">
+      <h2>Formato de erro</h2>
+      <p>Todas as respostas de erro seguem o formato único <code>{ erro, campos? }</code>:</p>
+      <table>
+        <thead><tr><th>Status</th><th>Exemplo</th></tr></thead>
+        <tbody>
+          <tr><td>400</td><td><code>{ "erro": "Dados inválidos.", "campos": { "campo": "mensagem" } }</code></td></tr>
+          <tr><td>401</td><td><code>{ "erro": "Token ausente, inválido ou expirado." }</code></td></tr>
+          <tr><td>404</td><td><code>{ "erro": "Recurso não encontrado." }</code></td></tr>
+          <tr><td>409</td><td><code>{ "erro": "Conflito.", "campos": { "campo": "mensagem" } }</code></td></tr>
+          <tr><td>500</td><td><code>{ "erro": "Erro interno do servidor." }</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="cors">
+      <h2>CORS</h2>
+      <p>A origem permitida é <code>https://SEU_USUARIO.github.io</code> (apenas <code>scheme://host</code>, <strong>sem</strong> o caminho do repositório).</p>
+      <div class="card">
+        <h3>Configuração no backend (produção)</h3>
+        <p>Defina a variável de ambiente <code>CORS_ORIGIN</code> no backend (Render):</p>
+        <pre><code>CORS_ORIGIN=https://SEU_USUARIO.github.io</code></pre>
+        <p>Em desenvolvimento local: <code>http://localhost:4200,https://SEU_USUARIO.github.io</code></p>
+      </div>
+    </section>
+
+    <section id="demo">
+      <h2>Demonstração</h2>
+      <p>Experimente a aplicação completa (login, lançamentos, relatórios) conectada à API publicada em produção:</p>
+      <a href="/demo/" class="demo-link">Abrir demonstração →</a>
+      <p class="text-muted" style="font-size:0.875rem;">A demo se conecta à API publicada (Render). Use as credenciais de demonstração: <code>ana@email.com</code> / <code>Ana@1234</code>.</p>
+    </section>
   </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>API Finanças — Documentação publicada via GitHub Pages (pasta <code>/docs</code>). Zero-build, sem dependências.</p>
+    </div>
+  </footer>
 </body>
 </html>
