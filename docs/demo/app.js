@@ -114,6 +114,9 @@ function showTab(name) {
   if (name === "lancamentos" && getToken()) {
     renderLancamentos();
   }
+  if (name === "fontes") {
+    renderFontes();
+  }
   if (name === "relatorios" && getToken()) {
     renderRelatorios();
   }
@@ -355,6 +358,22 @@ function renderLancamentos() {
       <!-- Form will be rendered by renderLancamentosForm() -->
     </div>
 
+    <div class="card" id="lancamentos-importar">
+      <h2>Importar lançamentos</h2>
+      <p class="form-hint">Baixe o modelo em Excel (<code>.xlsx</code>) — a coluna <strong>Data</strong> tem <strong>calendário</strong> (só aceita datas) e as colunas <strong>Categoria</strong> e <strong>Fonte/Destino</strong> têm lista suspensa com as suas opções. Colunas: <code>Data, Descrição, Categoria, Fonte/Destino, Parcela, Valor</code>. O tipo (entrada/saída) é definido pela categoria; a linha de exemplo é ignorada. Também aceita <code>.csv</code> (vírgula, valor com ponto, ex.: <code>150.90</code>) e o arquivo exportado pela própria tela. Categorias/Fontes citadas que não existirem são criadas automaticamente.</p>
+      <div class="form-actions">
+        <button type="button" id="btn-baixar-modelo" class="secondary">Baixar modelo (.xlsx)</button>
+      </div>
+      <div class="form-group">
+        <label for="import-arquivo">Arquivo (.xlsx ou .csv)</label>
+        <input type="file" id="import-arquivo" name="arquivo" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
+      </div>
+      <div class="form-actions">
+        <button type="button" id="btn-importar" class="primary">Importar</button>
+      </div>
+      <div id="import-resultado" hidden></div>
+    </div>
+
     <div class="card" id="lancamentos-filtros">
       <div class="filtros-row">
         <div class="form-group">
@@ -375,6 +394,9 @@ function renderLancamentos() {
         </div>
         <div class="form-group filtro-submit">
           <button type="button" id="btn-filtrar" class="primary">Filtrar</button>
+        </div>
+        <div class="form-group filtro-submit">
+          <button type="button" id="btn-exportar" class="secondary">Exportar Excel</button>
         </div>
       </div>
     </div>
@@ -432,6 +454,11 @@ function renderLancamentos() {
     });
   }
 
+  const btnExportar = document.getElementById("btn-exportar");
+  if (btnExportar) {
+    btnExportar.addEventListener("click", exportarLancamentos);
+  }
+
   const btnAnterior = document.getElementById("btn-pagina-anterior");
   const btnProxima = document.getElementById("btn-pagina-proxima");
   if (btnAnterior) {
@@ -456,6 +483,15 @@ function renderLancamentos() {
       });
     }
   });
+
+  const btnBaixarModelo = document.getElementById("btn-baixar-modelo");
+  if (btnBaixarModelo) {
+    btnBaixarModelo.addEventListener("click", baixarModeloImportacao);
+  }
+  const btnImportar = document.getElementById("btn-importar");
+  if (btnImportar) {
+    btnImportar.addEventListener("click", importarArquivoCsv);
+  }
 
   // Load reference data and render form
   const token = getToken();
@@ -706,6 +742,260 @@ async function handleCriarLancamento(event) {
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = "Criar Lançamento";
+  }
+}
+
+async function baixarModeloImportacao() {
+  const token = getToken();
+  if (!token) {
+    const resultadoEl = document.getElementById("import-resultado");
+    if (resultadoEl) {
+      resultadoEl.textContent = "Sessão expirada. Faça login novamente.";
+      resultadoEl.className = "alert alert-error";
+      resultadoEl.hidden = false;
+    }
+    return;
+  }
+
+  const resultadoEl = document.getElementById("import-resultado");
+  if (resultadoEl) {
+    resultadoEl.hidden = true;
+    resultadoEl.textContent = "";
+    resultadoEl.className = "";
+  }
+
+  try {
+    const res = await fetch(API_BASE + "/lancamentos/importar/modelo", {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    if (!res.ok) {
+      let msg = "Erro ao baixar modelo.";
+      if (res.status === 401) {
+        msg = "Sessão expirada. Faça login novamente.";
+        clearToken();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (data && data.erro) msg = data.erro;
+      }
+      if (resultadoEl) {
+        resultadoEl.textContent = escapeHtml(msg);
+        resultadoEl.className = "alert alert-error";
+        resultadoEl.hidden = false;
+      }
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "modelo-lancamentos.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  } catch (err) {
+    if (resultadoEl) {
+      resultadoEl.textContent = escapeHtml(err.message || "Erro ao baixar modelo.");
+      resultadoEl.className = "alert alert-error";
+      resultadoEl.hidden = false;
+    }
+  }
+}
+
+async function exportarLancamentos() {
+  const token = getToken();
+  const erroEl = document.getElementById("lancamentos-erro");
+  if (!token) {
+    if (erroEl) {
+      erroEl.textContent = "Sessão expirada. Faça login novamente.";
+      erroEl.hidden = false;
+    }
+    return;
+  }
+
+  const inicio = document.getElementById("filtro-inicio") ? document.getElementById("filtro-inicio").value : "";
+  const fim = document.getElementById("filtro-fim") ? document.getElementById("filtro-fim").value : "";
+  const tipo = document.getElementById("filtro-tipo") ? document.getElementById("filtro-tipo").value : "";
+  const params = new URLSearchParams();
+  if (inicio) params.set("inicio", inicio);
+  if (fim) params.set("fim", fim);
+  if (tipo) params.set("tipo", tipo);
+
+  if (erroEl) {
+    erroEl.hidden = true;
+    erroEl.textContent = "";
+  }
+
+  try {
+    const res = await fetch(API_BASE + "/lancamentos/exportar?" + params.toString(), {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) {
+      let msg = "Erro ao exportar.";
+      if (res.status === 401) {
+        msg = "Sessão expirada. Faça login novamente.";
+        clearToken();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (data && data.erro) msg = data.erro;
+      }
+      if (erroEl) {
+        erroEl.textContent = escapeHtml(msg);
+        erroEl.hidden = false;
+      }
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "lancamentos.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  } catch (err) {
+    if (erroEl) {
+      erroEl.textContent = escapeHtml(err.message || "Erro ao exportar.");
+      erroEl.hidden = false;
+    }
+  }
+}
+
+async function importarArquivoCsv() {
+  const fileInput = document.getElementById("import-arquivo");
+  const btnImportar = document.getElementById("btn-importar");
+  const resultadoEl = document.getElementById("import-resultado");
+
+  if (!fileInput || !fileInput.files.length) {
+    if (resultadoEl) {
+      resultadoEl.textContent = "Selecione um arquivo (.xlsx ou .csv).";
+      resultadoEl.className = "alert alert-error";
+      resultadoEl.hidden = false;
+    }
+    return;
+  }
+
+  const token = getToken();
+  if (!token) {
+    if (resultadoEl) {
+      resultadoEl.textContent = "Sessão expirada. Faça login novamente.";
+      resultadoEl.className = "alert alert-error";
+      resultadoEl.hidden = false;
+    }
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const ehXlsx = /\.xlsx$/i.test(file.name) || (file.type || "").indexOf("spreadsheetml") !== -1;
+  const contentType = ehXlsx
+    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    : "text/csv";
+  let corpo;
+  try {
+    corpo = ehXlsx ? await file.arrayBuffer() : await file.text();
+  } catch (err) {
+    if (resultadoEl) {
+      resultadoEl.textContent = escapeHtml("Erro ao ler o arquivo: " + err.message);
+      resultadoEl.className = "alert alert-error";
+      resultadoEl.hidden = false;
+    }
+    return;
+  }
+
+  if (btnImportar) {
+    btnImportar.disabled = true;
+    btnImportar.textContent = "Importando…";
+  }
+  if (resultadoEl) {
+    resultadoEl.hidden = true;
+    resultadoEl.textContent = "";
+    resultadoEl.className = "";
+  }
+
+  try {
+    const res = await fetch(API_BASE + "/lancamentos/importar", {
+      method: "POST",
+      headers: {
+        "Content-Type": contentType,
+        Authorization: "Bearer " + token
+      },
+      body: corpo
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 201) {
+      const importados = data && data.importados ? data.importados : 0;
+      const catsCriadas = data && data.categoriasCriadas ? data.categoriasCriadas : 0;
+      const fontesCriadas = data && data.fontesCriadas ? data.fontesCriadas : 0;
+      let msg = "Importados " + importados + " lançamento(s).";
+      if (catsCriadas || fontesCriadas) {
+        msg += " Criados automaticamente: " + catsCriadas + " categoria(s) e " + fontesCriadas + " fonte/destino.";
+      }
+      if (resultadoEl) {
+        resultadoEl.innerHTML = escapeHtml(msg);
+        resultadoEl.className = "alert alert-success";
+        resultadoEl.hidden = false;
+      }
+      fileInput.value = "";
+      if (token) {
+        carregarCategoriasETipos(token);
+        carregarFontesDestinos(token);
+      }
+      carregarLancamentos(1);
+    } else if (res.status === 400) {
+      let html = escapeHtml(data && data.erro ? data.erro : "Erro na importação.");
+      if (data && Array.isArray(data.linhas) && data.linhas.length > 0) {
+        html += "<ul class=\"import-erros\">";
+        for (const item of data.linhas) {
+          const linha = item && item.linha ? item.linha : "?";
+          const coluna = item && item.coluna ? item.coluna : "";
+          const msg = item && item.mensagem ? item.mensagem : "Erro desconhecido";
+          if (coluna && coluna !== "linha") {
+            html += "<li>" + escapeHtml("Linha " + linha + ", coluna " + coluna + ": " + msg) + "</li>";
+          } else {
+            html += "<li>" + escapeHtml("Linha " + linha + ": " + msg) + "</li>";
+          }
+        }
+        html += "</ul>";
+      }
+      if (resultadoEl) {
+        resultadoEl.innerHTML = html;
+        resultadoEl.className = "alert alert-error";
+        resultadoEl.hidden = false;
+      }
+    } else if (res.status === 401) {
+      if (resultadoEl) {
+        resultadoEl.textContent = "Sessão expirada. Faça login novamente.";
+        resultadoEl.className = "alert alert-error";
+        resultadoEl.hidden = false;
+      }
+      clearToken();
+    } else {
+      if (resultadoEl) {
+        resultadoEl.textContent = escapeHtml(data && data.erro ? data.erro : ("Erro HTTP " + res.status));
+        resultadoEl.className = "alert alert-error";
+        resultadoEl.hidden = false;
+      }
+    }
+  } catch (err) {
+    if (resultadoEl) {
+      resultadoEl.textContent = escapeHtml(err.message || "Erro ao importar arquivo.");
+      resultadoEl.className = "alert alert-error";
+      resultadoEl.hidden = false;
+    }
+  } finally {
+    if (btnImportar) {
+      btnImportar.disabled = false;
+      btnImportar.textContent = "Importar";
+    }
   }
 }
 
@@ -1226,6 +1516,303 @@ function renderCategoriasTabela(categorias) {
       </tbody>
     </table>
   `;
+}
+
+// --- Fontes/Destinos view ---
+let fontesCache = [];
+let fonteEditandoId = null;
+
+function renderFontes() {
+  const panel = document.getElementById("panel-fontes");
+  if (!panel) return;
+
+  panel.innerHTML = `
+    <h1>Fontes e Destinos</h1>
+
+    <div class="card" id="fonte-form-card">
+      <h2 id="fonte-form-titulo">Nova Fonte/Destino</h2>
+      <form id="form-fonte" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fonte-nome">Nome <span class="required">*</span></label>
+            <input type="text" id="fonte-nome" name="nome" required maxlength="60" placeholder="Ex.: Conta Corrente, Cartão Nubank...">
+          </div>
+          <div class="form-group">
+            <label for="fonte-tipo">Tipo <span class="required">*</span></label>
+            <select id="fonte-tipo" name="tipo" required>
+              <option value="">Selecione</option>
+              <option value="renda">Renda</option>
+              <option value="conta">Conta</option>
+              <option value="cartao_credito">Cartão de crédito</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" id="fonte-cartao-campos" hidden>
+          <div class="form-group">
+            <label for="fonte-dia-fechamento">Dia de fechamento <span class="required">*</span></label>
+            <input type="number" id="fonte-dia-fechamento" name="dia_fechamento" min="1" max="31" placeholder="Ex.: 3">
+          </div>
+          <div class="form-group">
+            <label for="fonte-dia-vencimento">Dia de vencimento <span class="required">*</span></label>
+            <input type="number" id="fonte-dia-vencimento" name="dia_vencimento" min="1" max="31" placeholder="Ex.: 10">
+          </div>
+          <div class="form-group">
+            <label for="fonte-limite">Limite (R$) <span class="required">*</span></label>
+            <input type="number" id="fonte-limite" name="limite" min="0.01" step="0.01" placeholder="0,00">
+          </div>
+        </div>
+
+        <div id="fonte-erro" class="alert alert-error" hidden></div>
+
+        <div class="form-actions">
+          <button type="submit" class="primary" id="fonte-submit">Criar</button>
+          <button type="button" class="secondary" id="fonte-cancelar" hidden>Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Cadastradas</h2>
+      <div id="fonte-lista"><p class="text-center">Carregando…</p></div>
+    </div>
+  `;
+
+  const form = document.getElementById("form-fonte");
+  const tipoSelect = document.getElementById("fonte-tipo");
+  const cancelar = document.getElementById("fonte-cancelar");
+
+  if (tipoSelect) tipoSelect.addEventListener("change", atualizarCamposFonte);
+  if (form) form.addEventListener("submit", handleSalvarFonte);
+  if (cancelar) cancelar.addEventListener("click", resetFormFonte);
+
+  resetFormFonte();
+  carregarListaFontes();
+}
+
+function atualizarCamposFonte() {
+  const tipoEl = document.getElementById("fonte-tipo");
+  const tipo = tipoEl ? tipoEl.value : "";
+  const cartaoCampos = document.getElementById("fonte-cartao-campos");
+  if (cartaoCampos) cartaoCampos.hidden = tipo !== "cartao_credito";
+}
+
+function resetFormFonte() {
+  fonteEditandoId = null;
+  const form = document.getElementById("form-fonte");
+  if (form) form.reset();
+  atualizarCamposFonte();
+  const titulo = document.getElementById("fonte-form-titulo");
+  const submit = document.getElementById("fonte-submit");
+  const cancelar = document.getElementById("fonte-cancelar");
+  const erro = document.getElementById("fonte-erro");
+  if (titulo) titulo.textContent = "Nova Fonte/Destino";
+  if (submit) submit.textContent = "Criar";
+  if (cancelar) cancelar.hidden = true;
+  if (erro) { erro.hidden = true; erro.textContent = ""; }
+}
+
+async function carregarListaFontes() {
+  const container = document.getElementById("fonte-lista");
+  if (!container) return;
+  const token = getToken();
+  if (!token) {
+    container.innerHTML = `<p class="text-center">Faça login para ver as fontes/destinos.</p>`;
+    return;
+  }
+  try {
+    fontesCache = await api("/fontes-destinos", { token });
+    renderListaFontes();
+  } catch (err) {
+    container.innerHTML = `<p class="text-center">${escapeHtml(err.message || "Erro ao carregar fontes/destinos.")}</p>`;
+  }
+}
+
+function renderListaFontes() {
+  const container = document.getElementById("fonte-lista");
+  if (!container) return;
+  if (!fontesCache || fontesCache.length === 0) {
+    container.innerHTML = `<p class="text-center">Nenhuma fonte/destino cadastrada.</p>`;
+    return;
+  }
+
+  const tipos = { renda: "Renda", conta: "Conta", cartao_credito: "Cartão de crédito" };
+  const rows = fontesCache.map(f => `
+    <tr>
+      <td>${escapeHtml(f.nome)}</td>
+      <td>${escapeHtml(tipos[f.tipo] || f.tipo)}</td>
+      <td class="text-right">${f.dia_fechamento != null ? f.dia_fechamento : "—"}</td>
+      <td class="text-right">${f.dia_vencimento != null ? f.dia_vencimento : "—"}</td>
+      <td class="text-right">${f.limite != null ? formatCurrency(f.limite) : "—"}</td>
+      <td>${f.reserva ? "Sim" : "—"}</td>
+      <td class="text-right">
+        <div class="acoes">
+          <button type="button" class="secondary btn-sm" data-editar="${f.id}">Editar</button>
+          <button type="button" class="secondary btn-sm" data-excluir="${f.id}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="table-wrapper">
+      <table class="relatorio-tabela">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th class="text-right">Fechamento</th>
+            <th class="text-right">Vencimento</th>
+            <th class="text-right">Limite</th>
+            <th>Reserva</th>
+            <th class="text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+
+  container.querySelectorAll("[data-editar]").forEach(btn => {
+    btn.addEventListener("click", () => editarFonte(parseInt(btn.dataset.editar, 10)));
+  });
+  container.querySelectorAll("[data-excluir]").forEach(btn => {
+    btn.addEventListener("click", () => excluirFonte(parseInt(btn.dataset.excluir, 10)));
+  });
+}
+
+function editarFonte(id) {
+  const fonte = fontesCache.find(f => f.id === id);
+  if (!fonte) return;
+
+  fonteEditandoId = id;
+  const setVal = (elId, valor) => {
+    const el = document.getElementById(elId);
+    if (el) el.value = valor == null ? "" : valor;
+  };
+  setVal("fonte-nome", fonte.nome);
+  setVal("fonte-tipo", fonte.tipo);
+  setVal("fonte-dia-fechamento", fonte.dia_fechamento);
+  setVal("fonte-dia-vencimento", fonte.dia_vencimento);
+  setVal("fonte-limite", fonte.limite);
+
+  atualizarCamposFonte();
+
+  const titulo = document.getElementById("fonte-form-titulo");
+  const submit = document.getElementById("fonte-submit");
+  const cancelar = document.getElementById("fonte-cancelar");
+  const erro = document.getElementById("fonte-erro");
+  if (titulo) titulo.textContent = "Editar Fonte/Destino";
+  if (submit) submit.textContent = "Salvar";
+  if (cancelar) cancelar.hidden = false;
+  if (erro) { erro.hidden = true; erro.textContent = ""; }
+
+  const formCard = document.getElementById("fonte-form-card");
+  if (formCard && formCard.scrollIntoView) formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function excluirFonte(id) {
+  const fonte = fontesCache.find(f => f.id === id);
+  const nome = fonte ? fonte.nome : "esta fonte/destino";
+  if (!window.confirm(`Excluir "${nome}"?`)) return;
+
+  const token = getToken();
+  if (!token) return;
+  const erro = document.getElementById("fonte-erro");
+
+  try {
+    await api("/fontes-destinos/" + id, { method: "DELETE", token });
+    await carregarListaFontes();
+    await carregarFontesDestinos(token);
+  } catch (err) {
+    if (erro) {
+      erro.textContent = escapeHtml(err.message || "Erro ao excluir.");
+      erro.hidden = false;
+    }
+  }
+}
+
+async function handleSalvarFonte(event) {
+  event.preventDefault();
+  const form = event.target;
+  const submit = document.getElementById("fonte-submit");
+  const erro = document.getElementById("fonte-erro");
+  if (erro) { erro.hidden = true; erro.textContent = ""; }
+
+  const token = getToken();
+  if (!token) {
+    if (erro) { erro.textContent = "Sessão expirada. Faça login novamente."; erro.hidden = false; }
+    return;
+  }
+
+  const nome = form.elements.nome.value.trim();
+  const tipo = form.elements.tipo.value;
+  const diaFechamento = form.elements.dia_fechamento.value;
+  const diaVencimento = form.elements.dia_vencimento.value;
+  const limite = form.elements.limite.value;
+
+  const campos = {};
+  if (!nome) campos.nome = "Nome é obrigatório.";
+  else if (nome.length > 60) campos.nome = "Nome deve ter no máximo 60 caracteres.";
+  if (!tipo) campos.tipo = "Tipo é obrigatório.";
+  if (tipo === "cartao_credito") {
+    const fech = Number(diaFechamento);
+    if (!diaFechamento || !Number.isInteger(fech) || fech < 1 || fech > 31) {
+      campos.dia_fechamento = "Dia de fechamento deve ser inteiro entre 1 e 31.";
+    }
+    const venc = Number(diaVencimento);
+    if (!diaVencimento || !Number.isInteger(venc) || venc < 1 || venc > 31) {
+      campos.dia_vencimento = "Dia de vencimento deve ser inteiro entre 1 e 31.";
+    }
+    const lim = Number(limite);
+    if (!limite || Number.isNaN(lim) || lim <= 0) {
+      campos.limite = "Limite deve ser número maior que zero.";
+    }
+  }
+
+  if (Object.keys(campos).length > 0) {
+    if (erro) {
+      erro.textContent = "Dados inválidos: " + Object.entries(campos).map(([k, v]) => `${k}: ${v}`).join("; ");
+      erro.hidden = false;
+    }
+    return;
+  }
+
+  const ehCartao = tipo === "cartao_credito";
+  const body = {
+    nome,
+    tipo,
+    dia_fechamento: ehCartao ? Number(diaFechamento) : null,
+    dia_vencimento: ehCartao ? Number(diaVencimento) : null,
+    limite: ehCartao ? Number(limite) : null
+  };
+
+  const editando = fonteEditandoId !== null;
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = editando ? "Salvando..." : "Criando...";
+  }
+
+  try {
+    if (editando) {
+      await api("/fontes-destinos/" + fonteEditandoId, { method: "PUT", body, token });
+    } else {
+      await api("/fontes-destinos", { method: "POST", body, token });
+    }
+    resetFormFonte();
+    await carregarListaFontes();
+    await carregarFontesDestinos(token);
+  } catch (err) {
+    if (erro) {
+      erro.textContent = escapeHtml(err.message || "Erro ao salvar.");
+      erro.hidden = false;
+    }
+  } finally {
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = fonteEditandoId !== null ? "Salvar" : "Criar";
+    }
+  }
 }
 
 // --- Init ---

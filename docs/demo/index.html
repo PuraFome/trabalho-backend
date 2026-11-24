@@ -20,6 +20,7 @@
   <nav class="tabs" role="tablist" aria-label="Navegação principal">
     <button id="tab-login" role="tab" aria-selected="true" aria-controls="panel-login" tabindex="0">Login</button>
     <button id="tab-lancamentos" role="tab" aria-selected="false" aria-controls="panel-lancamentos" tabindex="-1">Lançamentos</button>
+    <button id="tab-fontes" role="tab" aria-selected="false" aria-controls="panel-fontes" tabindex="-1">Fontes/Destinos</button>
     <button id="tab-relatorios" role="tab" aria-selected="false" aria-controls="panel-relatorios" tabindex="-1">Relatórios</button>
     <button id="btn-tema" type="button" class="tema-toggle" aria-label="Alternar tema" title="Alternar tema">🌓</button>
     <a href="../" class="doc-link" title="documentação da API" style="margin-left:0.5rem;padding:0.875rem 1rem;font-weight:500;white-space:nowrap;">Documentação</a>
@@ -32,6 +33,10 @@
 
     <section id="panel-lancamentos" role="tabpanel" aria-labelledby="tab-lancamentos" class="panel" hidden>
       <!-- Lançamentos UI will be rendered here by app.js -->
+    </section>
+
+    <section id="panel-fontes" role="tabpanel" aria-labelledby="tab-fontes" class="panel" hidden>
+      <!-- Fontes/Destinos UI will be rendered here by app.js -->
     </section>
 
     <section id="panel-relatorios" role="tabpanel" aria-labelledby="tab-relatorios" class="panel" hidden>
