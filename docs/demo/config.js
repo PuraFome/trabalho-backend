@@ -2,7 +2,7 @@
 // Classic script (CommonJS-compatible), no ES modules
 
 const LOCAL_API_BASE = 'http://localhost:3000';
-const PROD_API_BASE = 'https://SEU_APP.onrender.com'; // SUBSTITUA pela sua URL do Render
+const PROD_API_BASE = 'https://trabalho-backend-jrkv.onrender.com';
 
 /**
  * Resolve a base da API baseada no hostname e porta.
