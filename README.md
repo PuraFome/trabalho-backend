@@ -124,6 +124,7 @@ curl -s http://localhost:3000/health
 | `npm start` | Produção (`node server.js`) |
 | `npm run dev` | Desenvolvimento (`nodemon server.js`, hot reload) |
 | `npm test` | Testes unitários (`node --test testes/unit`) |
+| `npm run test:integration` | Checklist HTTP ponta a ponta (`testes/integracao`, API + MySQL em execução) |
 | `npm run docker:up` | `docker compose up -d --build` |
 | `npm run docker:down` | `docker compose down` |
 | `npm run db:reset` | `docker compose down -v && docker compose up -d db` (reset total do banco) |
@@ -490,7 +491,7 @@ for cada mês futuro:
 | 11 | **`.env` fora, `.env.example` dentro** | `git check-ignore .env` → 0 (ignorado); `git check-ignore .env.example` → 1 (não ignorado) | ✅ |
 | 12 | **README reproduzível do zero** | `docker compose down -v && cp .env.example .env && docker compose up -d --build` → `/health` 200; modo local idem | ✅ |
 
-> Todos os 12 itens verificados na evidência `testes/requisicoes.md` + `.omo/evidence/task-31-api-financas.md`.
+> Os 12 itens são verificáveis pelo roteiro executável [`testes/requisicoes.md`](testes/requisicoes.md). Os testes unitários automatizados cobrem independentemente CPF, datas, parcelas, faturas e saúde financeira.
 
 ---
 
