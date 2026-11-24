@@ -197,13 +197,16 @@ trabalho-backend/
 │   ├── datas.js          # Datas UTC, período anterior, clamp
 │   ├── parcelas.js       # Divisão em centavos (resto na 1ª)
 │   ├── faturas.js        # Regra de fechamento/vencimento (Tabela 11.3)
+│   ├── csv.js            # Parser CSV sem dependências
+│   ├── xlsx.js           # Leitura/escrita de .xlsx (ZIP + SpreadsheetML) sem dependências
+│   ├── importacaoLancamentos.js # Modelo e validação da importação por linha/célula
 │   └── saude.js          # 5 indicadores + projeção + dicas
 ├── database/
 │   ├── connection.js     # Pool mysql2/promise (UTC, dateStrings)
 │   ├── schema.sql        # 4 tabelas, FKs, UNIQUE/CHECK nomeados
 │   └── seed.sql          # 2 usuários + 3 meses + 10× parcelado
 ├── testes/
-│   ├── unit/             # node:test (CPF, datas, parcelas, faturas, saúde)
+│   ├── unit/             # node:test (CPF, datas, parcelas, faturas, saúde, importação, xlsx)
 │   └── requisicoes.md    # Roteiro curl TODAS as rotas (A–L)
 ├── docker/
 │   └── api-entrypoint.sh # Entrypoint dev (npm install + npm run dev)
@@ -216,7 +219,7 @@ trabalho-backend/
 │   ├── README.md         # Documentação do site (docs + demo)
 │   ├── .nojekyll         # Desativa Jekyll no GitHub Pages
 │   └── demo/             # Demonstração ao vivo (app financeira)
-│       ├── index.html    # Shell HTML com abas (Login, Lançamentos, Relatórios)
+│       ├── index.html    # Shell HTML com abas (Login, Lançamentos, Fontes/Destinos, Relatórios)
 │       ├── styles.css    # Estilos da aplicação
 │       ├── config.js     # Resolve a base da API (local x produção)
 │       └── app.js        # Auth, lançamentos e relatórios (scripts clássicos)
@@ -232,7 +235,7 @@ trabalho-backend/
 A pasta `/docs` é um site estático, zero-build e sem dependências, publicado pelo **GitHub Pages**, com duas partes:
 
 - **`docs/index.html`** — **documentação da API** (visão geral, autenticação JWT, referência de rotas, exemplos, formato de erro, CORS e credenciais de demonstração).
-- **`docs/demo/`** — **demonstração ao vivo** da aplicação financeira (login, cadastro, lançamentos, relatórios), conectada à API publicada.
+- **`docs/demo/`** — **demonstração ao vivo** da aplicação financeira (login, cadastro, lançamentos, cadastro de fontes/destinos, relatórios), conectada à API publicada.
 
 ### Servir localmente
 
@@ -288,6 +291,9 @@ Use o usuário do seed: `ana@email.com` / `Ana@1234`.
 | POST | `/lancamentos` | Sim | `{tipo,descricao,valor,data,categoriaId,fonteDestinoId,parcelas?}` | 201, 400, 404, 401 |
 | PUT | `/lancamentos/:id` | Sim | `{tipo?,descricao?,valor?,data?,categoriaId?,fonteDestinoId?}` | 200, 400, 404, 401 |
 | DELETE | `/lancamentos/:id` | Sim | `?todasParcelas=true` | 204, 400, 404, 401 |
+| GET | `/lancamentos/importar/modelo` | Sim | `?formato=csv` (padrão `.xlsx`) | 200, 401 |
+| POST | `/lancamentos/importar` | Sim | CSV (`text/csv`) ou `.xlsx` | 201, 400, 401, 500 |
+| GET | `/lancamentos/exportar` | Sim | `?inicio&fim&tipo` (opcionais) | 200, 400, 401 |
 | GET | `/relatorios/categorias` | Sim | `inicio,fim` (obrigatórios) | 200, 400, 401 |
 | GET | `/relatorios/fontes-destinos` | Sim | `inicio,fim` (obrigatórios) | 200, 400, 401 |
 | GET | `/relatorios/faturas` | Sim | `?meses=3` (1–12) | 200, 400, 401 |
@@ -385,6 +391,14 @@ Todos os `DECIMAL`/`SUM` convertidos com `Number()` uma única vez no model. Rel
 // 500
 { "erro": "Erro interno do servidor." }
 ```
+
+### 11. Importação de lançamentos (Excel `.xlsx` ou CSV)
+- **Modelo:** `GET /lancamentos/importar/modelo` devolve um `.xlsx` cujas colunas **Categoria** e **Fonte/Destino** têm lista suspensa (validação de dados) preenchida com as categorias/fontes do usuário, e a coluna **Data** tem **validação de data** (calendário, só aceita datas, exibida como `AAAA-MM-DD`). Colunas: `Data, Descrição, Categoria, Fonte/Destino, Parcela, Valor` (+ linha de exemplo, ignorada). `?formato=csv` baixa o modelo em CSV (UTF-8 com BOM).
+- **Formato:** no CSV, separador vírgula e decimal com ponto (`150.90`). As colunas são reconhecidas **pelo cabeçalho**, então a importação aceita tanto o modelo quanto o arquivo gerado por `GET /lancamentos/exportar` (que tem a coluna extra `Tipo`, ignorada — o `tipo` é inferido da categoria). `Categoria` e `Fonte/Destino` são referenciados **pelo nome**. `Parcela` aceita um inteiro (total de parcelas; 1 se vazio) ou o formato `k/N` do export (importado como lançamento único). Parcelamento só para saída em cartão de crédito.
+- **Importação:** `POST /lancamentos/importar` aceita `text/csv` ou `.xlsx` (binário) e valida todas as linhas **antes** de gravar. Se qualquer célula for inválida, **nada** é importado e o retorno lista cada erro com `linha`, `coluna` e `mensagem`. Caso contrário, tudo é gravado em uma única transação. Categorias e fontes/destinos citados **pelo nome** que não existirem na conta são **criados automaticamente** (categoria com o tipo da coluna `Tipo`, ou `saida`; fonte/destino como `conta`) — o retorno informa `categoriasCriadas`/`fontesCriadas`. A leitura/escrita de `.xlsx` é feita **sem dependências** (ZIP + SpreadsheetML com `node:zlib`, em `utils/xlsx.js`).
+
+### 12. Exportação de lançamentos (`.xlsx`)
+`GET /lancamentos/exportar` devolve um `.xlsx` com **todos** os lançamentos do usuário (sem paginação), respeitando os filtros opcionais `inicio`, `fim`, `tipo`, `categoriaId` e `fonteDestinoId`. Colunas: `Data, Tipo, Descrição, Categoria, Fonte/Destino, Parcela, Valor` (Data como data, Valor numérico). Gerado sem dependências pelo mesmo `utils/xlsx.js`.
 
 ---
 
