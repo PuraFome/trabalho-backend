@@ -9,6 +9,15 @@ const app = express();
 
 app.use(cors);
 app.use(express.json());
+app.use(express.text({ type: ['text/csv', 'text/plain'], limit: '2mb' }));
+app.use(express.raw({
+  type: [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/octet-stream'
+  ],
+  limit: '5mb'
+}));
 
 app.get('/health', async (req, res) => {
   try {

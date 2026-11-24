@@ -40,6 +40,54 @@ class Lancamento {
     }
   }
 
+  async criarEmLote(usuarioId, itens) {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const linhas = [];
+      for (const item of itens) {
+        const parcelas = item.parcelas || 1;
+        const valoresParcelas = dividirEmParcelas(item.valor, parcelas);
+        const grupo = parcelas > 1 ? crypto.randomUUID() : null;
+
+        valoresParcelas.forEach((valorParcela, i) => {
+          linhas.push([
+            usuarioId,
+            item.tipo,
+            item.descricao,
+            valorParcela,
+            item.data,
+            item.categoriaId,
+            item.fonteDestinoId,
+            i + 1,
+            parcelas,
+            grupo
+          ]);
+        });
+      }
+
+      if (linhas.length === 0) {
+        await conn.commit();
+        return { quantidade: 0 };
+      }
+
+      const [result] = await conn.query(
+        `INSERT INTO lancamentos (usuario_id, tipo, descricao, valor, data, categoria_id, fonte_destino_id, parcela_atual, total_parcelas, grupo_parcelamento)
+         VALUES ?`,
+        [linhas]
+      );
+
+      await conn.commit();
+      return { quantidade: result.affectedRows };
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
+  }
+
   async listar(usuarioId, { inicio, fim, tipo, categoriaId, fonteDestinoId, pagina = 1 }) {
     const where = ['l.usuario_id = ?'];
     const params = [usuarioId];
@@ -114,6 +162,54 @@ class Lancamento {
       total,
       resumo: { entradas, saidas, saldo: Number((entradas - saidas).toFixed(2)) }
     };
+  }
+
+  async listarTodos(usuarioId, { inicio, fim, tipo, categoriaId, fonteDestinoId } = {}) {
+    const where = ['l.usuario_id = ?'];
+    const params = [usuarioId];
+
+    if (inicio) {
+      where.push('l.data >= ?');
+      params.push(inicio);
+    }
+    if (fim) {
+      where.push('l.data <= ?');
+      params.push(fim);
+    }
+    if (tipo) {
+      where.push('l.tipo = ?');
+      params.push(tipo);
+    }
+    if (categoriaId) {
+      where.push('l.categoria_id = ?');
+      params.push(categoriaId);
+    }
+    if (fonteDestinoId) {
+      where.push('l.fonte_destino_id = ?');
+      params.push(fonteDestinoId);
+    }
+
+    const [rows] = await pool.query(
+      `SELECT l.id, l.tipo, l.descricao, l.valor, l.data, l.parcela_atual, l.total_parcelas,
+              c.nome AS categoria_nome, f.nome AS fonte_nome
+       FROM lancamentos l
+       JOIN categorias c ON c.id = l.categoria_id
+       JOIN fontes_destinos f ON f.id = l.fonte_destino_id
+       WHERE ${where.join(' AND ')}
+       ORDER BY l.data DESC, l.id DESC`,
+      params
+    );
+
+    return rows.map(row => ({
+      id: row.id,
+      tipo: row.tipo,
+      descricao: row.descricao,
+      valor: Number(row.valor),
+      data: row.data,
+      categoria: { nome: row.categoria_nome },
+      fonteDestino: { nome: row.fonte_nome },
+      parcela: row.total_parcelas > 1 ? `${row.parcela_atual}/${row.total_parcelas}` : null
+    }));
   }
 
   async buscarPorId(id, usuarioId) {

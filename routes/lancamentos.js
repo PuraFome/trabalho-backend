@@ -3,6 +3,9 @@ const Lancamento = require('../models/Lancamento');
 const Categoria = require('../models/Categoria');
 const FonteDestino = require('../models/FonteDestino');
 const { ehDataValida, hojeUTC, ultimoDiaDoMes } = require('../utils/datas');
+const { parseCsv } = require('../utils/csv');
+const { gerarModelo, validarLinhas, normalizarNome } = require('../utils/importacaoLancamentos');
+const { gerarModeloXlsx, lerXlsx, gerarXlsxSimples } = require('../utils/xlsx');
 
 const TIPOS_VALIDOS = ['entrada', 'saida'];
 
@@ -77,6 +80,220 @@ router.get('/', async (req, res) => {
     totalPaginas,
     itens: resultado.itens
   });
+});
+
+// GET /lancamentos/importar/modelo  (?formato=csv para o modelo em texto)
+router.get('/importar/modelo', async (req, res) => {
+  const formato = String(req.query.formato || 'xlsx').toLowerCase();
+
+  if (formato === 'csv') {
+    const csv = gerarModelo();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="modelo-lancamentos.csv"');
+    return res.send('\uFEFF' + csv);
+  }
+
+  try {
+    const [categorias, fontes] = await Promise.all([
+      Categoria.listar(req.auth.id),
+      FonteDestino.listar(req.auth.id)
+    ]);
+    const buffer = gerarModeloXlsx({ categorias, fontes });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="modelo-lancamentos.xlsx"');
+    return res.send(buffer);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ erro: 'Erro interno do servidor.' });
+  }
+});
+
+// POST /lancamentos/importar  (aceita CSV text/csv ou Excel .xlsx binário)
+router.post('/importar', async (req, res) => {
+  const body = req.body;
+  const vazio = Buffer.isBuffer(body) ? body.length === 0 : !(typeof body === 'string' && body.trim());
+
+  if (vazio) {
+    return res.status(400).json({
+      erro: 'Arquivo vazio.',
+      campos: { arquivo: 'Envie um arquivo CSV ou Excel (.xlsx) com pelo menos um lançamento.' }
+    });
+  }
+
+  let linhas;
+  try {
+    if (Buffer.isBuffer(body)) {
+      linhas = lerXlsx(body);
+    } else if (typeof body === 'string') {
+      linhas = parseCsv(body);
+    } else {
+      return res.status(400).json({
+        erro: 'Formato não suportado.',
+        campos: { arquivo: 'Envie um arquivo CSV ou Excel (.xlsx).' }
+      });
+    }
+  } catch (e) {
+    return res.status(400).json({
+      erro: 'Não foi possível ler o arquivo.',
+      campos: { arquivo: 'Arquivo inválido ou corrompido.' }
+    });
+  }
+
+  try {
+    const [categorias, fontes] = await Promise.all([
+      Categoria.listar(req.auth.id),
+      FonteDestino.listar(req.auth.id)
+    ]);
+
+    const categoriasPorNome = new Map();
+    for (const categoria of categorias) {
+      const chave = normalizarNome(categoria.nome);
+      if (!categoriasPorNome.has(chave)) {
+        categoriasPorNome.set(chave, []);
+      }
+      categoriasPorNome.get(chave).push(categoria);
+    }
+
+    const fontesPorNome = new Map();
+    for (const fonte of fontes) {
+      fontesPorNome.set(normalizarNome(fonte.nome), fonte);
+    }
+
+    const { erros, validos } = validarLinhas(linhas, { categoriasPorNome, fontesPorNome });
+
+    if (erros.length > 0) {
+      return res.status(400).json({
+        erro: `Importação cancelada: ${erros.length} erro(s) encontrado(s).`,
+        linhas: erros
+      });
+    }
+
+    if (validos.length === 0) {
+      return res.status(400).json({
+        erro: 'Nenhum lançamento para importar.',
+        campos: { arquivo: 'O arquivo não contém lançamentos válidos.' }
+      });
+    }
+
+    const chaveCategoria = (nome, tipo) => `${normalizarNome(nome)}|${tipo}`;
+
+    const categoriasCriadas = new Map();
+    for (const item of validos) {
+      if (item.categoriaId) {
+        continue;
+      }
+      const chave = chaveCategoria(item.categoriaNome, item.tipo);
+      if (categoriasCriadas.has(chave)) {
+        continue;
+      }
+      const criada = await Categoria.criar({
+        usuarioId: req.auth.id,
+        nome: item.categoriaNome,
+        tipo: item.tipo,
+        classificacao: null
+      });
+      categoriasCriadas.set(chave, criada.id);
+    }
+
+    const fontesCriadas = new Map();
+    for (const item of validos) {
+      if (item.fonteDestinoId) {
+        continue;
+      }
+      const chave = normalizarNome(item.fonteNome);
+      if (fontesCriadas.has(chave)) {
+        continue;
+      }
+      const criada = await FonteDestino.criar({
+        usuarioId: req.auth.id,
+        nome: item.fonteNome,
+        tipo: 'conta',
+        dia_fechamento: null,
+        dia_vencimento: null,
+        limite: null,
+        reserva: false
+      });
+      fontesCriadas.set(chave, criada.id);
+    }
+
+    const itens = validos.map((item) => ({
+      tipo: item.tipo,
+      descricao: item.descricao,
+      valor: item.valor,
+      data: item.data,
+      categoriaId: item.categoriaId || categoriasCriadas.get(chaveCategoria(item.categoriaNome, item.tipo)),
+      fonteDestinoId: item.fonteDestinoId || fontesCriadas.get(normalizarNome(item.fonteNome)),
+      parcelas: item.parcelas
+    }));
+
+    const resultado = await Lancamento.criarEmLote(req.auth.id, itens);
+    return res.status(201).json({
+      importados: itens.length,
+      lancamentos: resultado.quantidade,
+      categoriasCriadas: categoriasCriadas.size,
+      fontesCriadas: fontesCriadas.size
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ erro: 'Erro interno do servidor.' });
+  }
+});
+
+// GET /lancamentos/exportar  (.xlsx com os lançamentos; respeita os filtros)
+router.get('/exportar', async (req, res) => {
+  const { inicio, fim, tipo, categoriaId, fonteDestinoId } = req.query;
+  const campos = {};
+
+  if (inicio && !ehDataValida(inicio)) {
+    campos.inicio = 'Data de início inválida. Use AAAA-MM-DD.';
+  }
+  if (fim && !ehDataValida(fim)) {
+    campos.fim = 'Data de fim inválida. Use AAAA-MM-DD.';
+  }
+  if (inicio && fim && inicio > fim) {
+    campos.periodo = 'Data de início deve ser anterior ou igual à data de fim.';
+  }
+  if (tipo && !TIPOS_VALIDOS.includes(tipo)) {
+    campos.tipo = 'Tipo deve ser entrada ou saida.';
+  }
+
+  if (Object.keys(campos).length > 0) {
+    return res.status(400).json({ erro: 'Dados inválidos.', campos });
+  }
+
+  try {
+    const itens = await Lancamento.listarTodos(req.auth.id, {
+      inicio,
+      fim,
+      tipo,
+      categoriaId: categoriaId ? parseInt(categoriaId, 10) : undefined,
+      fonteDestinoId: fonteDestinoId ? parseInt(fonteDestinoId, 10) : undefined
+    });
+
+    const linhas = itens.map((item) => [
+      item.data,
+      item.tipo === 'entrada' ? 'Entrada' : 'Saída',
+      item.descricao,
+      item.categoria.nome,
+      item.fonteDestino.nome,
+      item.parcela || '',
+      item.valor
+    ]);
+
+    const buffer = gerarXlsxSimples({
+      nomeAba: 'Lançamentos',
+      cabecalho: ['Data', 'Tipo', 'Descrição', 'Categoria', 'Fonte/Destino', 'Parcela', 'Valor'],
+      linhas,
+      tipos: { 0: 'data', 6: 'numero' }
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="lancamentos.xlsx"');
+    return res.send(buffer);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ erro: 'Erro interno do servidor.' });
+  }
 });
 
 // GET /lancamentos/:id
@@ -172,6 +389,12 @@ router.post('/', async (req, res) => {
   const fonte = await FonteDestino.buscarPorId(parseInt(fonteDestinoId, 10), req.auth.id);
   if (!fonte) {
     return res.status(404).json({ erro: 'Fonte/destino não encontrado.' });
+  }
+  if (parcelasFinal > 1 && tipo !== 'saida') {
+    return res.status(400).json({
+      erro: 'Dados inválidos.',
+      campos: { parcelas: 'Parcelamento só é permitido para lançamentos do tipo saida.' }
+    });
   }
   if (parcelasFinal > 1 && fonte.tipo !== 'cartao_credito') {
     return res.status(400).json({
