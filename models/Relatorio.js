@@ -1,6 +1,6 @@
 const pool = require('../database/connection');
 const { calcularFatura } = require('../utils/faturas');
-const { hojeUTC, deslocarMes } = require('../utils/datas');
+const { hojeUTC, deslocarMes, dataSegura } = require('../utils/datas');
 
 class Relatorio {
   async porCategoria(usuarioId, inicio, fim, inicioAnterior, fimAnterior) {
@@ -172,10 +172,21 @@ class Relatorio {
       referenciasPorCartao[cartao.id] = referencias;
       faturasPorCartao[cartao.id] = {};
       for (const ref of referencias) {
+        let fechamento = null;
+        let vencimento = null;
+        if (cartao.dia_vencimento > cartao.dia_fechamento) {
+          const [ano, mes] = ref.split('-').map(Number);
+          fechamento = dataSegura(ano, mes - 1, cartao.dia_fechamento).toISOString().slice(0, 10);
+          vencimento = dataSegura(ano, mes - 1, cartao.dia_vencimento).toISOString().slice(0, 10);
+        } else {
+          const [ano, mes] = ref.split('-').map(Number);
+          fechamento = dataSegura(ano, mes - 2, cartao.dia_fechamento).toISOString().slice(0, 10);
+          vencimento = dataSegura(ano, mes - 1, cartao.dia_vencimento).toISOString().slice(0, 10);
+        }
         faturasPorCartao[cartao.id][ref] = {
           referencia: ref,
-          fechamento: null,
-          vencimento: null,
+          fechamento,
+          vencimento,
           total: 0,
           lancamentos: []
         };
@@ -228,9 +239,16 @@ class Relatorio {
         };
       });
 
-      const limiteUtilizado = faturasOrdenadas
-        .filter(f => f.vencimento && f.vencimento >= hoje)
-        .reduce((sum, f) => sum + f.total, 0);
+      const limiteUtilizado = lancamentos
+        .filter(l => l.fonte_destino_id === cartao.id)
+        .reduce((sum, l) => {
+          const fatura = calcularFatura(
+            l.data,
+            { diaFechamento: cartao.dia_fechamento, diaVencimento: cartao.dia_vencimento },
+            l.parcela_atual
+          );
+          return fatura.vencimento >= hoje ? sum + Number(l.valor) : sum;
+        }, 0);
 
       const limite = Number(cartao.limite || 0);
       const limiteDisponivel = Number((limite - limiteUtilizado).toFixed(2));
