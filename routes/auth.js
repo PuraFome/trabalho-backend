@@ -11,15 +11,18 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 router.post('/cadastro', async (req, res) => {
   const { nome, email, cpf, senha } = req.body || {};
   const campos = {};
+  const nomeNorm = typeof nome === 'string' ? nome.trim() : '';
+  const emailNorm = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const cpfNorm = typeof cpf === 'string' ? cpf.replace(/\D/g, '') : '';
 
   // Validações
-  if (!nome || !nome.trim()) {
+  if (!nomeNorm) {
     campos.nome = 'Nome é obrigatório.';
   }
-  if (!email || !EMAIL_REGEX.test(email)) {
+  if (!emailNorm || !EMAIL_REGEX.test(emailNorm)) {
     campos.email = 'E-mail inválido.';
   }
-  if (!cpf || !cpfValido(cpf)) {
+  if (!cpfNorm || !cpfValido(cpfNorm)) {
     campos.cpf = 'CPF inválido.';
   }
   if (!senha || senha.length < 8 || !/[A-Za-z]/.test(senha) || !/[0-9]/.test(senha)) {
@@ -31,10 +34,6 @@ router.post('/cadastro', async (req, res) => {
   }
 
   // Normalização
-  const nomeNorm = nome.trim();
-  const emailNorm = email.trim().toLowerCase();
-  const cpfNorm = cpf.replace(/\D/g, '');
-
   try {
     const senhaHash = await bcrypt.hash(senha, Number(process.env.BCRYPT_ROUNDS || 10));
     const usuario = await Usuario.cadastrar({ nome: nomeNorm, email: emailNorm, cpf: cpfNorm, senhaHash });
@@ -56,37 +55,47 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
   }
 
-  const emailNorm = email.trim().toLowerCase();
-  const usuario = await Usuario.buscarPorEmail(emailNorm);
+  try {
+    const emailNorm = email.trim().toLowerCase();
+    const usuario = await Usuario.buscarPorEmail(emailNorm);
 
-  if (!usuario) {
-    return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
+    if (!usuario) {
+      return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
+    }
+
+    const senhaOk = await bcrypt.compare(senha, usuario.senha_hash);
+    if (!senhaOk) {
+      return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
+    }
+
+    const token = jwt.sign(
+      { id: usuario.id, nome: usuario.nome, email: usuario.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    return res.status(200).json({
+      token,
+      usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email }
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ erro: 'Erro interno do servidor.' });
   }
-
-  const senhaOk = await bcrypt.compare(senha, usuario.senha_hash);
-  if (!senhaOk) {
-    return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
-  }
-
-  const token = jwt.sign(
-    { id: usuario.id, nome: usuario.nome, email: usuario.email },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-
-  return res.status(200).json({
-    token,
-    usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email }
-  });
 });
 
 // GET /auth/me
 router.get('/me', protegerRota, async (req, res) => {
-  const usuario = await Usuario.buscarPorId(req.auth.id);
-  if (!usuario) {
-    return res.status(404).json({ erro: 'Usuário não encontrado.' });
+  try {
+    const usuario = await Usuario.buscarPorId(req.auth.id);
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado.' });
+    }
+    return res.status(200).json(usuario);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ erro: 'Erro interno do servidor.' });
   }
-  return res.status(200).json(usuario);
 });
 
 module.exports = router;
