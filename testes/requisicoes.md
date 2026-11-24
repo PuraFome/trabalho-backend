@@ -320,6 +320,12 @@ curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/lancamentos" \
   -d '{"tipo":"saida","descricao":"Erro","valor":100,"data":"2026-01-10","categoriaId":7,"fonteDestinoId":1,"parcelas":3}'
 # Esperado: 400 "Parcelamento só é permitido para fontes do tipo cartao_credito."
 
+# Entrada parcelada (parcelamento permitido apenas em saída)
+curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/lancamentos" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"tipo":"entrada","descricao":"Erro","valor":100,"data":"2026-01-10","categoriaId":2,"fonteDestinoId":5,"parcelas":3}'
+# Esperado: 400 "Parcelamento só é permitido para lançamentos do tipo saida."
+
 # Categoria de outro usuário (Bruno tem cat id=12)
 curl -s -w "\nHTTP %{http_code}" -X POST "$BASE/lancamentos" \
   -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
