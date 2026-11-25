@@ -13,6 +13,20 @@ function mesesDeReserva(saldoReserva, mediaSaidas) {
   return Number((saldoReserva / mediaSaidas).toFixed(2));
 }
 
+function clamp(n, min, max) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function indiceEndividamento(totalParcelasFuturas, mediaEntradasMensal) {
+  if (mediaEntradasMensal <= 0) return 0;
+  return Number((totalParcelasFuturas / (mediaEntradasMensal * 12)).toFixed(4));
+}
+
+function runwayMeses(saldoContas, mediaSaidasMensal) {
+  if (mediaSaidasMensal <= 0) return 0;
+  return Number((saldoContas / mediaSaidasMensal).toFixed(2));
+}
+
 function distribuicao503020(saidasPorClassificacao, entradasMes) {
   const necessidade = Number(saidasPorClassificacao.necessidade || 0);
   const desejo = Number(saidasPorClassificacao.desejo || 0);
@@ -134,9 +148,12 @@ function gerarDicas({
 }
 
 module.exports = {
+  clamp,
   taxaPoupanca,
   comprometimentoCartoes,
   mesesDeReserva,
+  indiceEndividamento,
+  runwayMeses,
   distribuicao503020,
   listarParcelasFuturas,
   projetarSaldo,
