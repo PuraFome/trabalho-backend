@@ -87,6 +87,11 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+function ajuda(descricao) {
+  const safe = escapeHtml(descricao);
+  return `<span class="ajuda" tabindex="0" role="img" aria-label="${safe}">?<span class="ajuda-tooltip" role="tooltip">${safe}</span></span>`;
+}
+
 // --- Tab navigation ---
 function showTab(name) {
   // Panels
@@ -116,6 +121,9 @@ function showTab(name) {
   }
   if (name === "fontes") {
     renderFontes();
+  }
+  if (name === "categorias" && getToken()) {
+    renderCategorias();
   }
   if (name === "relatorios" && getToken()) {
     renderRelatorios();
@@ -431,10 +439,11 @@ function renderLancamentos() {
             <th>Fonte/Destino</th>
             <th>Parcela</th>
             <th class="text-right">Valor</th>
+            <th class="text-right">Ações</th>
           </tr>
         </thead>
         <tbody id="lancamentos-tbody">
-          <tr><td colspan="6" class="text-center">Carregando…</td></tr>
+          <tr><td colspan="7" class="text-center">Carregando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -513,6 +522,12 @@ function renderLancamentos() {
 // --- Lançamentos CREATE form ---
 let todasCategorias = [];
 let todasFontesDestinos = [];
+let lancamentosCache = [];
+let lancamentoEditandoId = null;
+
+// --- Categorias CRUD ---
+let categoriasCache = [];
+let categoriaEditandoId = null;
 
 async function carregarCategoriasETipos(token) {
   try {
@@ -617,6 +632,7 @@ function renderLancamentosForm() {
         <div class="form-actions">
           <button type="submit" class="primary">Criar Lançamento</button>
           <button type="button" id="btn-limpar-form" class="secondary">Limpar</button>
+          <button type="button" id="btn-cancelar-edicao" class="secondary" hidden>Cancelar</button>
         </div>
       </form>
     </div>
@@ -627,6 +643,7 @@ function renderLancamentosForm() {
   const tipoSelect = document.getElementById("lanc-tipo");
   const categoriaSelect = document.getElementById("lanc-categoria");
   const btnLimpar = document.getElementById("btn-limpar-form");
+  const btnCancelar = document.getElementById("btn-cancelar-edicao");
 
   if (tipoSelect && categoriaSelect) {
     tipoSelect.addEventListener("change", () => {
@@ -645,13 +662,11 @@ function renderLancamentosForm() {
   }
 
   if (btnLimpar) {
-    btnLimpar.addEventListener("click", () => {
-      form.reset();
-      categoriaSelect.innerHTML = `<option value="">Selecione o tipo primeiro</option>`;
-      categoriaSelect.disabled = true;
-      const erroEl = document.getElementById("lancamento-erro");
-      if (erroEl) { erroEl.hidden = true; erroEl.textContent = ""; }
-    });
+    btnLimpar.addEventListener("click", resetLancamentoForm);
+  }
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener("click", resetLancamentoForm);
   }
 }
 
@@ -713,8 +728,9 @@ async function handleCriarLancamento(event) {
     return;
   }
 
+  const editando = lancamentoEditandoId !== null;
   submitBtn.disabled = true;
-  submitBtn.textContent = "Criando...";
+  submitBtn.textContent = editando ? "Salvando..." : "Criando...";
 
   try {
     const body = {
@@ -725,26 +741,160 @@ async function handleCriarLancamento(event) {
       categoriaId,
       fonteDestinoId
     };
-    if (parcelas > 1) {
+    if (!editando && parcelas > 1) {
       body.parcelas = parcelas;
     }
 
-    await api("/lancamentos", { method: "POST", body, token });
+    if (editando) {
+      await api("/lancamentos/" + lancamentoEditandoId, { method: "PUT", body, token });
+    } else {
+      await api("/lancamentos", { method: "POST", body, token });
+    }
 
     // Success: reload list and reset form
-    form.reset();
-    const categoriaSelect = document.getElementById("lanc-categoria");
-    if (categoriaSelect) {
-      categoriaSelect.innerHTML = `<option value="">Selecione o tipo primeiro</option>`;
-      categoriaSelect.disabled = true;
-    }
+    resetLancamentoForm();
     carregarLancamentos(1);
   } catch (err) {
-    erroEl.textContent = escapeHtml(err.message || "Erro ao criar lançamento.");
+    erroEl.textContent = escapeHtml(err.message || (editando ? "Erro ao atualizar lançamento." : "Erro ao criar lançamento."));
     erroEl.hidden = false;
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Criar Lançamento";
+    submitBtn.textContent = editando ? "Salvar" : "Criar Lançamento";
+  }
+}
+
+function resetLancamentoForm() {
+  lancamentoEditandoId = null;
+  const form = document.getElementById("form-criar-lancamento");
+  if (form) form.reset();
+  const categoriaSelect = document.getElementById("lanc-categoria");
+  if (categoriaSelect) {
+    categoriaSelect.innerHTML = `<option value="">Selecione o tipo primeiro</option>`;
+    categoriaSelect.disabled = true;
+  }
+  const titulo = document.querySelector("#lancamentos-form-card h2");
+  const submitBtn = document.querySelector("#form-criar-lancamento button[type=\"submit\"]");
+  const cancelarBtn = document.getElementById("btn-cancelar-edicao");
+  const erroEl = document.getElementById("lancamento-erro");
+  const parcelasGroup = document.getElementById("lanc-parcelas").closest(".form-group");
+  if (titulo) titulo.textContent = "Novo Lançamento";
+  if (submitBtn) submitBtn.textContent = "Criar Lançamento";
+  if (cancelarBtn) cancelarBtn.hidden = true;
+  if (erroEl) { erroEl.hidden = true; erroEl.textContent = ""; }
+  if (parcelasGroup) parcelasGroup.hidden = false;
+}
+
+async function editarLancamento(id) {
+  const token = getToken();
+  if (!token) return;
+
+  const erroEl = document.getElementById("lancamento-erro");
+  if (erroEl) { erroEl.hidden = true; erroEl.textContent = ""; }
+
+  try {
+    const item = await api("/lancamentos/" + id, { token });
+    lancamentoEditandoId = id;
+
+    // Ensure form is rendered
+    renderLancamentosForm();
+
+    const titulo = document.querySelector("#lancamentos-form-card h2");
+    const submitBtn = document.querySelector("#form-criar-lancamento button[type=\"submit\"]");
+    const cancelarBtn = document.getElementById("btn-cancelar-edicao");
+    const tipoSelect = document.getElementById("lanc-tipo");
+    const categoriaSelect = document.getElementById("lanc-categoria");
+    const fonteSelect = document.getElementById("lanc-fonte");
+    const valorInput = document.getElementById("lanc-valor");
+    const dataInput = document.getElementById("lanc-data");
+    const descricaoInput = document.getElementById("lanc-descricao");
+    const parcelasGroup = document.getElementById("lanc-parcelas").closest(".form-group");
+
+    if (titulo) titulo.textContent = "Editar Lançamento";
+    if (submitBtn) submitBtn.textContent = "Salvar";
+    if (cancelarBtn) cancelarBtn.hidden = false;
+
+    if (tipoSelect) {
+      tipoSelect.value = item.tipo;
+      tipoSelect.dispatchEvent(new Event("change"));
+    }
+
+    // Wait for categoria options to populate
+    setTimeout(() => {
+      if (categoriaSelect) categoriaSelect.value = item.categoria?.id || "";
+      if (fonteSelect) fonteSelect.value = item.fonteDestino?.id || "";
+      if (valorInput) valorInput.value = item.valor;
+      if (dataInput) dataInput.value = item.data;
+      if (descricaoInput) descricaoInput.value = item.descricao || "";
+      if (parcelasGroup) parcelasGroup.hidden = true;
+    }, 0);
+
+    const formCard = document.getElementById("lancamentos-form-card");
+    if (formCard && formCard.scrollIntoView) formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) {
+    if (erroEl) {
+      erroEl.textContent = escapeHtml(err.message || "Erro ao carregar lançamento para edição.");
+      erroEl.hidden = false;
+    }
+  }
+}
+
+async function excluirLancamento(id) {
+  const token = getToken();
+  if (!token) return;
+
+  const erroEl = document.getElementById("lancamentos-erro");
+  if (erroEl) { erroEl.hidden = true; erroEl.textContent = ""; }
+
+  // Find item in cache
+  let item = lancamentosCache.find(l => l.id === id);
+  if (!item) {
+    try {
+      item = await api("/lancamentos/" + id, { token });
+    } catch (err) {
+      if (erroEl) {
+        erroEl.textContent = escapeHtml(err.message || "Erro ao buscar lançamento.");
+        erroEl.hidden = false;
+      }
+      return;
+    }
+  }
+
+  const descricao = item.descricao || "este lançamento";
+  const parcela = item.parcela || "";
+  let todasParcelas = false;
+
+  if (parcela && parcela.includes("/")) {
+    const partes = parcela.split("/");
+    const total = parseInt(partes[1], 10);
+    if (total > 1) {
+      const confirmAll = window.confirm(
+        `"${descricao}" faz parte de um parcelamento (${parcela}). Excluir TODAS as parcelas desta compra?\n\nOK = todas as parcelas — Cancelar = decidir só esta`
+      );
+      if (confirmAll) {
+        todasParcelas = true;
+      } else {
+        const confirmOne = window.confirm("Excluir apenas esta parcela?");
+        if (!confirmOne) return;
+      }
+    } else {
+      if (!window.confirm(`Excluir "${descricao}"?`)) return;
+    }
+  } else {
+    if (!window.confirm(`Excluir "${descricao}"?`)) return;
+  }
+
+  try {
+    const url = todasParcelas ? "/lancamentos/" + id + "?todasParcelas=true" : "/lancamentos/" + id;
+    await api(url, { method: "DELETE", token });
+    // Reload current page
+    const btnAnterior = document.getElementById("btn-pagina-anterior");
+    const paginaAtual = btnAnterior ? parseInt(btnAnterior.dataset.pagina || "1", 10) : 1;
+    carregarLancamentos(paginaAtual);
+  } catch (err) {
+    if (erroEl) {
+      erroEl.textContent = escapeHtml(err.message || "Erro ao excluir lançamento.");
+      erroEl.hidden = false;
+    }
   }
 }
 
@@ -1016,7 +1166,7 @@ async function carregarLancamentos(pagina = 1) {
   const btnAnterior = document.getElementById("btn-pagina-anterior");
   const btnProxima = document.getElementById("btn-pagina-proxima");
 
-  if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center">Carregando…</td></tr>`;
+  if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center">Carregando…</td></tr>`;
   if (erroEl) { erroEl.hidden = true; erroEl.textContent = ""; }
   if (btnFiltrar) { btnFiltrar.disabled = true; btnFiltrar.textContent = "Carregando…"; }
   if (btnAnterior) btnAnterior.disabled = true;
@@ -1043,9 +1193,10 @@ async function carregarLancamentos(pagina = 1) {
     }
 
     const itens = data.itens || [];
+    lancamentosCache = itens;
     if (tbody) {
       if (itens.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center">Nenhum lançamento encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center">Nenhum lançamento encontrado.</td></tr>`;
       } else {
         tbody.innerHTML = itens.map(item => `
           <tr>
@@ -1057,9 +1208,23 @@ async function carregarLancamentos(pagina = 1) {
             <td class="text-right ${item.tipo === "entrada" ? "positivo" : "negativo"}">
               ${item.tipo === "entrada" ? "+" : "-"} ${formatCurrency(item.valor)}
             </td>
+            <td class="text-right">
+              <div class="acoes">
+                <button type="button" class="secondary btn-sm" data-editar-lanc="${item.id}">Editar</button>
+                <button type="button" class="secondary btn-sm" data-excluir-lanc="${item.id}">Excluir</button>
+              </div>
+            </td>
           </tr>
         `).join("");
       }
+
+      // Wire edit/delete buttons
+      tbody.querySelectorAll("[data-editar-lanc]").forEach(btn => {
+        btn.addEventListener("click", () => editarLancamento(parseInt(btn.dataset.editarLanc, 10)));
+      });
+      tbody.querySelectorAll("[data-excluir-lanc]").forEach(btn => {
+        btn.addEventListener("click", () => excluirLancamento(parseInt(btn.dataset.excluirLanc, 10)));
+      });
     }
 
     const paginaAtual = data.pagina || 1;
@@ -1078,7 +1243,7 @@ async function carregarLancamentos(pagina = 1) {
     }
 
   } catch (err) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center">Erro ao carregar.</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center">Erro ao carregar.</td></tr>`;
     if (erroEl) {
       erroEl.textContent = escapeHtml(err.message || "Erro ao carregar lançamentos.");
       erroEl.hidden = false;
@@ -1227,27 +1392,27 @@ async function renderSaudeFinanceira() {
         <h2>Indicadores Principais</h2>
         <div class="resumo-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
           <div class="resumo-item">
-            <span class="resumo-label">Taxa de Poupança</span>
+            <span class="resumo-label">Taxa de Poupança ${ajuda("Percentual da sua renda mensal que sobra após as despesas: (entradas − saídas) ÷ entradas. O recomendado é poupar ao menos 10%.")}</span>
             <span class="resumo-valor">${escapeHtml((taxaPoupanca * 100).toFixed(2))}%</span>
           </div>
           <div class="resumo-item">
-            <span class="resumo-label">Comprometimento Cartões</span>
+            <span class="resumo-label">Comprometimento Cartões ${ajuda("Quanto da sua renda mensal média está comprometida com faturas de cartão dos últimos 3 meses. Acima de 30% é considerado elevado.")}</span>
             <span class="resumo-valor">${escapeHtml((comprometimentoCartoes * 100).toFixed(2))}%</span>
           </div>
           <div class="resumo-item">
-            <span class="resumo-label">Meses de Reserva</span>
+            <span class="resumo-label">Meses de Reserva ${ajuda("Quantos meses das suas despesas a sua reserva de emergência cobre. O ideal é ter de 3 a 6 meses.")}</span>
             <span class="resumo-valor">${escapeHtml(mesesDeReserva.toFixed(2))}</span>
           </div>
           <div class="resumo-item">
-            <span class="resumo-label">Índice de Endividamento</span>
+            <span class="resumo-label">Índice de Endividamento ${ajuda("Parte da renda dos próximos 12 meses já comprometida com parcelas futuras do cartão. Acima de 15% é considerado alto.")}</span>
             <span class="resumo-valor">${escapeHtml((indiceEndividamento * 100).toFixed(2))}%</span>
           </div>
           <div class="resumo-item">
-            <span class="resumo-label">Runway (meses)</span>
+            <span class="resumo-label">Runway (meses) ${ajuda("Por quantos meses o saldo das suas contas cobriria as despesas, sem novas entradas. Faixa saudável: 3 a 6 meses.")}</span>
             <span class="resumo-valor">${escapeHtml(runwayMeses.toFixed(2))}</span>
           </div>
           <div class="resumo-item">
-            <span class="resumo-label">Score de Saúde</span>
+            <span class="resumo-label">Score de Saúde ${ajuda("Nota de 0 a 100 que resume sua saúde financeira, combinando taxa de poupança, comprometimento com cartões e meses de reserva.")}</span>
             <span class="resumo-valor">${escapeHtml(String(Math.round(scoreSaude)))}</span>
           </div>
         </div>
@@ -1263,7 +1428,7 @@ async function renderSaudeFinanceira() {
 
     html += `
       <div class="card">
-        <h2>Distribuição 50/30/20</h2>
+        <h2>Distribuição 50/30/20 ${ajuda("Regra que sugere destinar 50% da renda a necessidades, 30% a desejos e 20% a poupança.")}</h2>
         <table class="relatorio-tabela">
           <thead>
             <tr>
@@ -1311,7 +1476,7 @@ async function renderSaudeFinanceira() {
       `).join("");
       html += `
         <div class="card">
-          <h2>Categorias Fora da Curva (> 1.30× média anterior)</h2>
+          <h2>Categorias Fora da Curva (> 1.30× média anterior) ${ajuda("Categorias cujos gastos no mês ficaram mais de 30% acima da média dos 3 meses anteriores.")}</h2>
           <table class="relatorio-tabela">
             <thead>
               <tr>
@@ -1339,7 +1504,7 @@ async function renderSaudeFinanceira() {
       `).join("");
       html += `
         <div class="card">
-          <h2>Concentração de Gastos (Top 3)</h2>
+          <h2>Concentração de Gastos (Top 3) ${ajuda("Peso das suas 3 maiores categorias no total de despesas do mês. Índices altos indicam gastos pouco diversificados.")}</h2>
           <p class="text-muted">Índice de concentração: ${escapeHtml((Number(conc.indiceConcentracao || 0) * 100).toFixed(2))}% do total de ${formatCurrency(conc.totalGastos)}</p>
           <table class="relatorio-tabela">
             <thead>
@@ -1364,7 +1529,7 @@ async function renderSaudeFinanceira() {
       const direcaoClass = direcao === "alta" ? "negativo" : direcao === "baixa" ? "positivo" : "";
       html += `
         <div class="card">
-          <h2>Tendência de Gastos</h2>
+          <h2>Tendência de Gastos ${ajuda("Comparação das despesas do mês atual com a média dos últimos 3 meses (variação de ±10% define alta, baixa ou estável).")}</h2>
           <div class="resumo-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
             <div class="resumo-item">
               <span class="resumo-label">Mês Atual</span>
@@ -1407,7 +1572,7 @@ async function renderSaudeFinanceira() {
       }).join("");
       html += `
         <div class="card">
-          <h2>Projeção (6 meses)</h2>
+          <h2>Projeção (6 meses) ${ajuda("Estimativa do seu saldo nos próximos 6 meses, combinando a média de entradas, a média de saídas e as parcelas futuras do cartão.")}</h2>
           <table class="relatorio-tabela">
             <thead>
               <tr>
@@ -2075,6 +2240,271 @@ async function handleSalvarFonte(event) {
     if (submit) {
       submit.disabled = false;
       submit.textContent = fonteEditandoId !== null ? "Salvar" : "Criar";
+    }
+  }
+}
+
+// --- Categorias CRUD ---
+function renderCategorias() {
+  const panel = document.getElementById("panel-categorias");
+  if (!panel) return;
+
+  panel.innerHTML = `
+    <h1>Categorias</h1>
+
+    <div class="card" id="categoria-form-card">
+      <h2 id="categoria-form-titulo">Nova Categoria</h2>
+      <form id="form-categoria" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cat-nome">Nome <span class="required">*</span></label>
+            <input type="text" id="cat-nome" name="nome" required maxlength="60" placeholder="Ex.: Alimentação, Transporte, Salário...">
+          </div>
+          <div class="form-group">
+            <label for="cat-tipo">Tipo <span class="required">*</span></label>
+            <select id="cat-tipo" name="tipo" required>
+              <option value="">Selecione</option>
+              <option value="entrada">Entrada</option>
+              <option value="saida">Saída</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="cat-classificacao-group" hidden>
+          <label for="cat-classificacao">Classificação</label>
+          <select id="cat-classificacao" name="classificacao">
+            <option value="">Selecione</option>
+            <option value="necessidade">Necessidade</option>
+            <option value="desejo">Desejo</option>
+            <option value="poupanca">Poupança</option>
+          </select>
+          <small class="form-hint">Obrigatório apenas para categorias de saída (tipo \"saida\").</small>
+        </div>
+
+        <div id="categoria-erro" class="alert alert-error" hidden></div>
+
+        <div class="form-actions">
+          <button type="submit" class="primary" id="cat-submit">Criar</button>
+          <button type="button" class="secondary" id="cat-cancelar" hidden>Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Cadastradas</h2>
+      <div id="categoria-lista"><p class="text-center">Carregando…</p></div>
+    </div>
+  `;
+
+  const form = document.getElementById("form-categoria");
+  const tipoSelect = document.getElementById("cat-tipo");
+  const cancelar = document.getElementById("cat-cancelar");
+
+  if (tipoSelect) tipoSelect.addEventListener("change", atualizarClassificacaoCategoria);
+  if (form) form.addEventListener("submit", handleSalvarCategoria);
+  if (cancelar) cancelar.addEventListener("click", resetFormCategoria);
+
+  resetFormCategoria();
+  carregarListaCategorias();
+}
+
+function atualizarClassificacaoCategoria() {
+  const tipoEl = document.getElementById("cat-tipo");
+  const tipo = tipoEl ? tipoEl.value : "";
+  const grupo = document.getElementById("cat-classificacao-group");
+  const select = document.getElementById("cat-classificacao");
+  if (grupo) grupo.hidden = tipo !== "saida";
+  if (select && tipo !== "saida") select.value = "";
+}
+
+function resetFormCategoria() {
+  categoriaEditandoId = null;
+  const form = document.getElementById("form-categoria");
+  if (form) form.reset();
+  atualizarClassificacaoCategoria();
+  const titulo = document.getElementById("categoria-form-titulo");
+  const submit = document.getElementById("cat-submit");
+  const cancelar = document.getElementById("cat-cancelar");
+  const erro = document.getElementById("categoria-erro");
+  if (titulo) titulo.textContent = "Nova Categoria";
+  if (submit) submit.textContent = "Criar";
+  if (cancelar) cancelar.hidden = true;
+  if (erro) { erro.hidden = true; erro.textContent = ""; }
+}
+
+async function carregarListaCategorias() {
+  const container = document.getElementById("categoria-lista");
+  if (!container) return;
+  const token = getToken();
+  if (!token) {
+    container.innerHTML = `<p class="text-center">Faça login para ver as categorias.</p>`;
+    return;
+  }
+  try {
+    categoriasCache = await api("/categorias", { token });
+    renderListaCategorias();
+  } catch (err) {
+    container.innerHTML = `<p class="text-center">${escapeHtml(err.message || "Erro ao carregar categorias.")}</p>`;
+  }
+}
+
+function renderListaCategorias() {
+  const container = document.getElementById("categoria-lista");
+  if (!container) return;
+  if (!categoriasCache || categoriasCache.length === 0) {
+    container.innerHTML = `<p class="text-center">Nenhuma categoria cadastrada.</p>`;
+    return;
+  }
+
+  const classificacaoLabels = { necessidade: "Necessidade", desejo: "Desejo", poupanca: "Poupança" };
+  const tipoLabels = { entrada: "Entrada", saida: "Saída" };
+  const rows = categoriasCache.map(c => `
+    <tr>
+      <td>${escapeHtml(c.nome)}</td>
+      <td>${escapeHtml(tipoLabels[c.tipo] || c.tipo)}</td>
+      <td>${c.classificacao ? escapeHtml(classificacaoLabels[c.classificacao] || c.classificacao) : "—"}</td>
+      <td class="text-right">
+        <div class="acoes">
+          <button type="button" class="secondary btn-sm" data-editar-cat="${c.id}">Editar</button>
+          <button type="button" class="secondary btn-sm" data-excluir-cat="${c.id}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="table-wrapper">
+      <table class="relatorio-tabela">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Classificação</th>
+            <th class="text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+
+  container.querySelectorAll("[data-editar-cat]").forEach(btn => {
+    btn.addEventListener("click", () => editarCategoria(parseInt(btn.dataset.editarCat, 10)));
+  });
+  container.querySelectorAll("[data-excluir-cat]").forEach(btn => {
+    btn.addEventListener("click", () => excluirCategoria(parseInt(btn.dataset.excluirCat, 10)));
+  });
+}
+
+function editarCategoria(id) {
+  const cat = categoriasCache.find(c => c.id === id);
+  if (!cat) return;
+
+  categoriaEditandoId = id;
+  const setVal = (elId, valor) => {
+    const el = document.getElementById(elId);
+    if (el) el.value = valor == null ? "" : valor;
+  };
+  setVal("cat-nome", cat.nome);
+  setVal("cat-tipo", cat.tipo);
+  setVal("cat-classificacao", cat.classificacao || "");
+
+  atualizarClassificacaoCategoria();
+
+  const titulo = document.getElementById("categoria-form-titulo");
+  const submit = document.getElementById("cat-submit");
+  const cancelar = document.getElementById("cat-cancelar");
+  const erro = document.getElementById("categoria-erro");
+  if (titulo) titulo.textContent = "Editar Categoria";
+  if (submit) submit.textContent = "Salvar";
+  if (cancelar) cancelar.hidden = false;
+  if (erro) { erro.hidden = true; erro.textContent = ""; }
+
+  const formCard = document.getElementById("categoria-form-card");
+  if (formCard && formCard.scrollIntoView) formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function excluirCategoria(id) {
+  const cat = categoriasCache.find(c => c.id === id);
+  const nome = cat ? cat.nome : "esta categoria";
+  if (!window.confirm(`Excluir "${nome}"?`)) return;
+
+  const token = getToken();
+  if (!token) return;
+  const erro = document.getElementById("categoria-erro");
+
+  try {
+    await api("/categorias/" + id, { method: "DELETE", token });
+    await carregarListaCategorias();
+    await carregarCategoriasETipos(token);
+  } catch (err) {
+    if (erro) {
+      erro.textContent = escapeHtml(err.message || "Erro ao excluir.");
+      erro.hidden = false;
+    }
+  }
+}
+
+async function handleSalvarCategoria(event) {
+  event.preventDefault();
+  const form = event.target;
+  const submit = document.getElementById("cat-submit");
+  const erro = document.getElementById("categoria-erro");
+  if (erro) { erro.hidden = true; erro.textContent = ""; }
+
+  const token = getToken();
+  if (!token) {
+    if (erro) { erro.textContent = "Sessão expirada. Faça login novamente."; erro.hidden = false; }
+    return;
+  }
+
+  const nome = form.elements.nome.value.trim();
+  const tipo = form.elements.tipo.value;
+  const classificacao = form.elements.classificacao.value;
+
+  const campos = {};
+  if (!nome) campos.nome = "Nome é obrigatório.";
+  else if (nome.length > 60) campos.nome = "Nome deve ter no máximo 60 caracteres.";
+  if (!tipo || !["entrada", "saida"].includes(tipo)) campos.tipo = "Tipo é obrigatório e deve ser entrada ou saida.";
+  if (tipo === "saida" && !classificacao) campos.classificacao = "Classificação é obrigatória para categorias de saída.";
+
+  if (Object.keys(campos).length > 0) {
+    if (erro) {
+      erro.textContent = "Dados inválidos: " + Object.entries(campos).map(([k, v]) => `${k}: ${v}`).join("; ");
+      erro.hidden = false;
+    }
+    return;
+  }
+
+  const body = { nome, tipo };
+  if (tipo === "saida") {
+    body.classificacao = classificacao || null;
+  }
+
+  const editando = categoriaEditandoId !== null;
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = editando ? "Salvando..." : "Criando...";
+  }
+
+  try {
+    if (editando) {
+      await api("/categorias/" + categoriaEditandoId, { method: "PUT", body, token });
+    } else {
+      await api("/categorias", { method: "POST", body, token });
+    }
+    resetFormCategoria();
+    await carregarListaCategorias();
+    await carregarCategoriasETipos(token);
+  } catch (err) {
+    if (erro) {
+      erro.textContent = escapeHtml(err.message || "Erro ao salvar.");
+      erro.hidden = false;
+    }
+  } finally {
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = categoriaEditandoId !== null ? "Salvar" : "Criar";
     }
   }
 }
