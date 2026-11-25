@@ -432,21 +432,52 @@ curl -s -w "\nHTTP %{http_code}" "$BASE/relatorios/faturas?meses=13" -H "Authori
 curl -s -w "\nHTTP %{http_code}" "$BASE/saude-financeira" -H "Authorization: Bearer $TOKEN"
 # Esperado: 200 com
 # {
-#   "aviso":"Informações educativas; não constituem recomendação financeira profissional.",
-#   "indicadores":{
-#     "taxaPoupanca": <number>,
-#     "comprometimentoCartoes": <number>,
-#     "parcelasFuturas":[{"mes":"AAAA-MM","total":<number>}],
-#     "distribuicao503020":{"necessidades":{...},"desejos":{...},"poupanca":{...},"naoClassificado":{...}},
-#     "mesesDeReserva": <number>
-#   },
-#   "projecao":[{"mes":"AAAA-MM","entradas":<number>,"saidas":<number>,"saldoPrevisto":<number>}...],
-#   "dicas":[<string>...]
+#   "aviso": "Informações educativas; não constituem recomendação financeira profissional.",
+#   "indicadores": {
+#     "taxaPoupanca": <number>,                         // 4 casas decimais
+#     "comprometimentoCartoes": <number>,               // 4 casas decimais
+#     "parcelasFuturas": [{"mes": "AAAA-MM", "total": <number>}, ...],
+#     "distribuicao503020": {
+#       "necessidades": {"total": <number>, "percentual": <number>},
+#       "desejos": {"total": <number>, "percentual": <number>},
+#       "poupanca": {"total": <number>, "percentual": <number>},
+#       "naoClassificado": {"total": <number>, "percentual": <number>}
+#     },
+#     "mesesDeReserva": <number>,                       // 2 casas decimais
+#     "categoriasForaDaCurva": [
+#       {"nome": <string>, "total": <number>, "mediaAnterior": <number>, "ratio": <number>}, ...
+#     ],
+#     "indiceEndividamento": <number>,                  // 4 casas decimais
+#     "runwayMeses": <number>,                          // 2 casas decimais (pode ser negativo)
+#     "scoreSaude": <number>,                           // inteiro 0-100
+#     "concentracaoGastos": {
+#       "categorias": [{"nome": <string>, "total": <number>, "percentual": <number>}, ...],
+#       "totalGastos": <number>,
+#       "indiceConcentracao": <number>                  // 4 casas decimais (Herfindahl-Hirschman)
+#     },
+#     "tendenciaGastos": {
+#       "mesAtual": "AAAA-MM",
+#       "saidasMesAtual": <number>,
+#       "media3Meses": <number>,
+#       "variacaoPercentual": <number>,                 // 2 casas decimais
+#       "direcao": "alta" | "baixa" | "estavel"
+#     }
+#   },                                                  // 11 chaves no total
+#   "projecao": [                                       // 6 meses
+#     {"mes": "AAAA-MM", "entradas": <number>, "saidas": <number>, "saldoPrevisto": <number>}, ...
+#   ],
+#   "dicas": [<string>, ...]                            // array não-vazio (máx. 5 + 1 positiva)
 # }
+
+# Asserções:
+# - 11 chaves em indicadores (taxaPoupanca, comprometimentoCartoes, parcelasFuturas, distribuicao503020, mesesDeReserva, categoriasForaDaCurva, indiceEndividamento, runwayMeses, scoreSaude, concentracaoGastos, tendenciaGastos)
+# - projecao com exatamente 6 objetos
+# - dicas é array não-vazio
+# - todos os valores numéricos são number (não string)
 
 # Sem token
 curl -s -w "\nHTTP %{http_code}" "$BASE/saude-financeira"
-# Esperado: 401
+# Esperado: 401 com {erro:"Token ausente, inválido ou expirado."}
 ```
 
 ---
