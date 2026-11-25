@@ -65,7 +65,7 @@ router.get('/fontes-destinos', async (req, res) => {
 });
 
 router.get('/faturas', async (req, res) => {
-  const { meses } = req.query;
+  const { meses, cartaoId } = req.query;
   const usuarioId = req.auth.id;
 
   const mesesNum = meses === undefined ? 3 : Number(meses);
@@ -73,8 +73,13 @@ router.get('/faturas', async (req, res) => {
     return res.status(400).json({ erro: 'Dados inválidos.', campos: { meses: 'Deve ser inteiro entre 1 e 12.' } });
   }
 
+  const cartaoIdNum = cartaoId === undefined || cartaoId === '' ? undefined : parseInt(cartaoId, 10);
+  if (cartaoId !== undefined && cartaoId !== '' && (!Number.isInteger(cartaoIdNum) || cartaoIdNum <= 0)) {
+    return res.status(400).json({ erro: 'Dados inválidos.', campos: { cartaoId: 'cartaoId deve ser inteiro positivo.' } });
+  }
+
   try {
-    const relatorio = await Relatorio.faturas(usuarioId, mesesNum);
+    const relatorio = await Relatorio.faturas(usuarioId, mesesNum, cartaoIdNum);
     res.json(relatorio);
   } catch (e) {
     console.error(e);

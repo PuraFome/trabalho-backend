@@ -30,17 +30,17 @@
     pre { background: #1f2937; color: #e5e7eb; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
     pre code { background: transparent; padding: 0; color: inherit; font-size: inherit; }
     table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
-    th, td { border: 1px solid var(--cor-borda); padding: 0.625rem 0.875rem; text-align: left; }
+    th, td { border: 1px solid var(--cor-borda); padding: 0.625rem 0.875rem; text-align: left; vertical-align: middle; }
     th { background: #f9fafb; font-weight: 600; }
     tr:nth-child(even) { background: #f9fafb; }
     .badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-    .badge-sim { background: #fef2f2; color: #991b1b; }
-    .badge-nao { background: #f0fdf4; color: #166534; }
+    .badge-sim { background: #f0fdf4; color: #166534; }
+    .badge-nao { background: #fef2f2; color: #991b1b; }
 
     /* Info tooltip — zero-dep, pure CSS */
     .info-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 1.1rem; height: 1.1rem; margin-left: 0.375rem; border: 1px solid var(--cor-borda); border-radius: 50%; background: #fff; color: var(--cor-primaria); font-size: 0.75rem; font-weight: 700; line-height: 1; cursor: help; flex-shrink: 0; }
     .info-tip:focus { outline: none; box-shadow: 0 0 0 2px var(--cor-primaria); }
-    .info-tip__pop { position: absolute; top: calc(100% + 0.375rem); left: 0; z-index: 20; max-width: 22rem; padding: 0.625rem 0.75rem; background: #1f2937; color: #e5e7eb; border-radius: 6px; font-size: 0.75rem; line-height: 1.5; white-space: normal; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(-0.25rem); transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease; pointer-events: none; }
+    .info-tip__pop { position: absolute; top: calc(100% + 0.375rem); left: 0; z-index: 20; width: 22rem; max-width: 90vw; box-sizing: border-box; padding: 0.625rem 0.75rem; background: #1f2937; color: #e5e7eb; border-radius: 6px; font-size: 0.75rem; line-height: 1.5; white-space: normal; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(-0.25rem); transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease; pointer-events: none; }
     .info-tip__pop::before { content: ""; position: absolute; bottom: 100%; left: 0.5rem; border: 6px solid transparent; border-bottom-color: #1f2937; }
     .info-tip:hover .info-tip__pop, .info-tip:focus-within .info-tip__pop { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; }
     .info-tip--right .info-tip__pop { left: auto; right: 0; }
@@ -88,12 +88,21 @@
     .status-err { background: #7f1d1d; color: #fca5a5; }
     .tryit-resp pre { margin: 0; white-space: pre-wrap; word-break: break-word; }
     .tryit-resp code { background: transparent; padding: 0; color: inherit; }
-    .fields { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.8125rem; }
-    .fields th, .fields td { border: 1px solid #374151; padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
-    .fields th { background: #374151; font-weight: 600; }
-    .fields tr:nth-child(even) { background: #374151; }
-    .fields .key { font-weight: 600; color: #a5b4fc; white-space: nowrap; }
-    .fields .val { color: #e5e7eb; }
+    .fields { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0.5rem 0 0; font-size: 0.8125rem; background: #fff; border: 1px solid var(--cor-borda); border-radius: 8px; overflow: hidden; }
+    .fields th, .fields td { padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--cor-borda); color: #0f172a; }
+    .fields thead th { background: #f3f4f6; font-weight: 600; color: #0f172a; white-space: nowrap; }
+    .fields thead th:not(:last-child), .fields tbody td:not(:last-child) { border-right: 1px solid var(--cor-borda); }
+    .fields tbody tr:last-child th, .fields tbody tr:last-child td { border-bottom: none; }
+    .fields th.key { background: #f3f4f6; font-weight: 600; color: #0f172a; white-space: nowrap; width: 1%; border-right: 1px solid var(--cor-borda); }
+    .fields td.val { color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; word-break: break-word; }
+    .fields tbody tr:nth-child(even) { background: #fafafa; }
+    .fields tbody tr:nth-child(even) th.key { background: #f3f4f6; }
+    .fields details.field-nested > summary { cursor: pointer; color: #1d4ed8; font-weight: 600; font-size: 0.78rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+    .fields .field-inner { margin-top: 0.4rem; padding-left: 0.6rem; border-left: 2px solid var(--cor-borda); }
+    .fields .field-inner > .fields { margin: 0; }
+    .fields .field-list { margin: 0; padding-left: 1.1rem; }
+    .fields .field-list li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; }
+    .fields .field-empty, .fields .field-more { color: #6b7280; font-size: 0.75rem; margin: 0.25rem 0 0; }
     .tryit-resp .binary-note { color: #9ca3af; font-size: 0.75rem; margin-top: 0.5rem; }
     .tryit-resp .download-link { display: inline-block; margin-top: 0.5rem; color: var(--cor-primaria); text-decoration: underline; }
     .tryit-resp .error-msg { color: #fca5a5; }
@@ -107,11 +116,11 @@
     .tryit-curl .copy-btn:hover { background: #334155; }
     .tryit-curl .copy-btn.copied { background: #166534; border-color: #166534; color: #dcfce7; }
     .tryit-curl .curl-note { font-size: 0.72rem; color: #6b7280; margin-top: 0.35rem; }
-    .tryit-status { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin: 0 0 0.75rem; }
-    .tryit-status .tryit-status-label { font-size: 0.72rem; color: #6b7280; font-weight: 600; margin-right: 0.15rem; }
-    .tryit-status label { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.55rem; border: 1px solid var(--cor-borda); border-radius: 9999px; background: #fff; color: #374151; cursor: pointer; }
-    .tryit-status label:has(input:checked) { border-color: var(--cor-primaria); background: #eff6ff; color: var(--cor-primaria); }
-    .tryit-status input { accent-color: var(--cor-primaria); margin: 0; }
+    .tryit-status { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; margin: 0 0 0.6rem; }
+    .tryit-status .tryit-status-label { font-size: 0.68rem; color: #9ca3af; font-weight: 500; margin-right: 0.1rem; }
+    .tryit-status label { display: inline-flex; flex-direction: row; align-items: center; min-width: 0; gap: 0.22rem; font-size: 0.82rem; font-weight: 500; line-height: 1.4; padding: 0.06rem 0.48rem; border: 1px solid var(--cor-borda); border-radius: 9999px; background: #fff; color: #6b7280; cursor: pointer; }
+    .tryit-status label:has(input:checked) { border-color: var(--cor-primaria); background: #eff6ff; color: var(--cor-primaria); font-weight: 600; }
+    .tryit-status input { width: 0.74rem; height: 0.74rem; min-width: 0; margin: 0; accent-color: var(--cor-primaria); }
     .tryit-status-note { font-size: 0.72rem; color: #b45309; margin: -0.35rem 0 0.75rem; }
     .tryit-status-note[hidden] { display: none; }
 
@@ -147,6 +156,26 @@
       .backdrop[hidden] { display: none; }
       main.container { padding-top: 3.75rem; }
     }
+    .checklist-demo .cl-step { margin: 0.5rem 0; }
+    .checklist-demo .cl-desc { font-size: 0.8rem; color: #374151; margin: 0 0 0.25rem; font-weight: 600; }
+    .checklist-demo .cl-step pre { margin: 0.25rem 0 0; }
+    .checklist-demo .cl-verdict { font-size: 0.85rem; font-weight: 700; margin: 0.6rem 0 0; }
+    .checklist-demo .cl-verdict.ok { color: #166534; }
+    .checklist-demo .cl-verdict.err { color: #991b1b; }
+    .checklist-demo .cl-nota { font-size: 0.78rem; color: #6b7280; margin: 0.5rem 0 0; }
+    .json-toggle { display: inline-block; margin: 0.25rem 0 0.35rem; font-size: 0.72rem; padding: 0.2rem 0.55rem; border: 1px solid var(--cor-borda); background: #f3f4f6; color: #374151; border-radius: 4px; cursor: pointer; }
+    .json-toggle:hover { background: #e5e7eb; }
+    a.gh { text-decoration: none; }
+    a.gh code { color: var(--cor-primaria); }
+    a.gh:hover code { text-decoration: underline; }
+    a.gh::after { content: "↗"; font-size: 0.7em; margin-left: 0.1em; color: var(--cor-primaria); }
+    .info-tip__pop .tip-head { display: block; font-weight: 700; color: #fff; margin: 0 0 0.4rem; font-size: 0.78rem; }
+    .info-tip__pop .tip-table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.72rem; }
+    .info-tip__pop .tip-table th, .info-tip__pop .tip-table td { border: none; border-top: 1px solid #374151; padding: 0.3rem 0.5rem 0.3rem 0; text-align: left; vertical-align: top; background: transparent; }
+    .info-tip__pop .tip-table tr { background: transparent; }
+    .info-tip__pop .tip-table th { color: #93c5fd; font-weight: 600; width: 40%; padding-right: 0.5rem; }
+    .info-tip__pop .tip-table td { color: #e5e7eb; word-break: break-word; }
+    .info-tip__pop .tip-table code { background: #0b1220; color: #e2e8f0; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.68rem; }
   </style>
 </head>
 <body>
@@ -254,7 +283,7 @@ curl http://localhost:3000/health
           <tr><td>POST</td><td><code>/fontes-destinos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{nome,tipo,dia_fechamento?,dia_vencimento?,limite?,reserva?}</code></td><td>201, 400, 409, 401</td></tr>
           <tr><td>PUT</td><td><code>/fontes-destinos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{nome?,tipo?,dia_fechamento?,dia_vencimento?,limite?,reserva?}</code></td><td>200, 400, 404, 409, 401</td></tr>
           <tr><td>DELETE</td><td><code>/fontes-destinos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>204, 400, 404, 409, 401</td></tr>
-          <tr><td>GET</td><td><code>/lancamentos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?inicio&fim&tipo&categoriaId&fonteDestinoId&pagina</code></td><td>200, 400, 401</td></tr>
+          <tr><td>GET</td><td><code>/lancamentos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?inicio&fim&tipo&categoriaId&fonteDestinoId&pagina&grupo</code></td><td>200, 400, 401</td></tr>
           <tr><td>GET</td><td><code>/lancamentos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>200, 400, 404, 401</td></tr>
           <tr><td>POST</td><td><code>/lancamentos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{tipo,descricao,valor,data,categoriaId,fonteDestinoId,parcelas?}</code></td><td>201, 400, 404, 401</td></tr>
           <tr><td>PUT</td><td><code>/lancamentos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{tipo?,descricao?,valor?,data?,categoriaId?,fonteDestinoId?}</code></td><td>200, 400, 404, 401</td></tr>
@@ -264,7 +293,7 @@ curl http://localhost:3000/health
           <tr><td>GET</td><td><code>/lancamentos/exportar</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?inicio&fim&tipo</code> (opcionais)</td><td>200, 400, 401, 500</td></tr>
           <tr><td>GET</td><td><code>/relatorios/categorias</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>inicio,fim</code> (obrigatórios)</td><td>200, 400, 401</td></tr>
           <tr><td>GET</td><td><code>/relatorios/fontes-destinos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>inicio,fim</code> (obrigatórios)</td><td>200, 400, 401</td></tr>
-          <tr><td>GET</td><td><code>/relatorios/faturas</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?meses=3</code> (1–12)</td><td>200, 400, 401</td></tr>
+          <tr><td>GET</td><td><code>/relatorios/faturas</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?meses=3</code> (1–12), <code>?cartaoId</code></td><td>200, 400, 401</td></tr>
           <tr><td>GET</td><td><code>/saude-financeira</code></td><td><span class="badge badge-sim">Sim</span></td><td>—</td><td>200, 401</td></tr>
         </tbody>
       </table>
@@ -551,7 +580,7 @@ Authorization: Bearer &lt;token&gt;</code></pre>
       <p>Erros: <code>400</code> · <code>401</code>.</p>
 
       <h4>GET /relatorios/faturas <span class="badge badge-sim">Protegida</span></h4>
-      <p>Previsão de faturas por cartão. Query opcional <code>?meses=3</code> (1–12).</p>
+      <p>Previsão de faturas por cartão. Query opcional <code>?meses=3</code> (1–12) e <code>?cartaoId</code> (filtra um cartão).</p>
       <pre><code>GET /relatorios/faturas?meses=3
 Authorization: Bearer &lt;token&gt;</code></pre>
       <pre><code>// Resposta 200
@@ -1071,7 +1100,7 @@ curl -s http://localhost:3000/health
       'POST /fontes-destinos': { auth: true, body: { nome: 'Cartão Nubank', tipo: 'cartao_credito', dia_fechamento: 3, dia_vencimento: 10, limite: 5000 } },
       'PUT /fontes-destinos/:id': { auth: true, pathParams: { id: '3' }, body: { limite: 6500 } },
       'DELETE /fontes-destinos/:id': { auth: true, pathParams: { id: '3' } },
-      'GET /lancamentos': { auth: true, query: { inicio: '2026-11-01', fim: '2026-11-30', pagina: '1' } },
+      'GET /lancamentos': { auth: true, query: { inicio: '2026-11-01', fim: '2026-11-30', pagina: '1', grupo: '' } },
       'GET /lancamentos/:id': { auth: true, pathParams: { id: '42' } },
       'POST /lancamentos': { auth: true, body: { tipo: 'saida', descricao: 'Notebook', valor: 3000, data: '2026-11-20', categoriaId: 9, fonteDestinoId: 3, parcelas: 10 } },
       'PUT /lancamentos/:id': { auth: true, pathParams: { id: '42' }, body: { descricao: 'Notebook Pro', valor: 3500 } },
@@ -1081,7 +1110,7 @@ curl -s http://localhost:3000/health
       'GET /lancamentos/exportar': { auth: true, query: { inicio: '2026-11-01', fim: '2026-11-30' }, binary: true, outputName: 'lancamentos.xlsx' },
       'GET /relatorios/categorias': { auth: true, query: { inicio: '2026-10-01', fim: '2026-10-31' } },
       'GET /relatorios/fontes-destinos': { auth: true, query: { inicio: '2026-10-01', fim: '2026-10-31' } },
-      'GET /relatorios/faturas': { auth: true, query: { meses: '3' } }
+      'GET /relatorios/faturas': { auth: true, query: { meses: '3', cartaoId: '' } }
     };
 
     function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
@@ -1109,29 +1138,48 @@ curl -s http://localhost:3000/health
       return String(v);
     }
 
+    function renderValue(td, v) {
+      if (v !== null && typeof v === 'object') {
+        var det = el('details', 'field-nested');
+        var sum = el('summary');
+        sum.textContent = Array.isArray(v) ? ('[' + v.length + (v.length === 1 ? ' item' : ' itens') + ']') : '[objeto]';
+        det.appendChild(sum);
+        var inner = el('div', 'field-inner'); renderFields(inner, v); det.appendChild(inner);
+        td.appendChild(det);
+      } else {
+        td.textContent = fmt(v);
+      }
+    }
+
     function renderFields(container, data) {
       if (Array.isArray(data)) {
-        if (data.length === 0) { container.appendChild(el('p', null, 'Lista vazia.')); return; }
-        if (typeof data[0] === 'object' && data[0] !== null) {
-          var cols = [];
-          data.forEach(function (row) { Object.keys(row).forEach(function (k) { if (cols.indexOf(k) === -1) cols.push(k); }); });
-          var table = el('table', 'fields');
-          var thead = el('thead'); var htr = el('tr');
-          cols.forEach(function (c) { htr.appendChild(el('th', null, c)); });
-          thead.appendChild(htr); table.appendChild(thead);
-          var tbody = el('tbody');
-          data.slice(0, 10).forEach(function (row) {
-            var tr = el('tr');
-            cols.forEach(function (c) { tr.appendChild(el('td', null, fmt(row[c]))); });
-            tbody.appendChild(tr);
-          });
-          table.appendChild(tbody); container.appendChild(table);
-          if (data.length > 10) container.appendChild(el('p', null, '… e mais ' + (data.length - 10) + ' item(ns).'));
-        } else {
-          var ul = el('ul');
-          data.slice(0, 20).forEach(function (v) { ul.appendChild(el('li', null, fmt(v))); });
+        if (data.length === 0) { container.appendChild(el('p', 'field-empty', 'Lista vazia.')); return; }
+        var allScalar = data.every(function (v) { return v === null || typeof v !== 'object'; });
+        if (allScalar) {
+          var ul = el('ul', 'field-list');
+          data.slice(0, 50).forEach(function (v) { ul.appendChild(el('li', null, fmt(v))); });
           container.appendChild(ul);
+          if (data.length > 50) container.appendChild(el('p', 'field-more', '… e mais ' + (data.length - 50) + ' item(ns).'));
+          return;
         }
+        var cols = [];
+        data.forEach(function (row) { if (row && typeof row === 'object' && !Array.isArray(row)) Object.keys(row).forEach(function (k) { if (cols.indexOf(k) === -1) cols.push(k); }); });
+        var table = el('table', 'fields');
+        var thead = el('thead'); var htr = el('tr');
+        cols.forEach(function (c) { htr.appendChild(el('th', null, c)); });
+        thead.appendChild(htr); table.appendChild(thead);
+        var tbody = el('tbody');
+        data.slice(0, 50).forEach(function (row) {
+          var tr = el('tr');
+          cols.forEach(function (c) {
+            var td = el('td');
+            renderValue(td, (row && typeof row === 'object') ? row[c] : undefined);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody); container.appendChild(table);
+        if (data.length > 50) container.appendChild(el('p', 'field-more', '… e mais ' + (data.length - 50) + ' item(ns).'));
         return;
       }
       if (data && typeof data === 'object') {
@@ -1139,13 +1187,28 @@ curl -s http://localhost:3000/health
         Object.keys(data).forEach(function (k) {
           var tr = el('tr');
           tr.appendChild(el('th', 'key', k));
-          tr.appendChild(el('td', 'val', fmt(data[k])));
-          tb.appendChild(tr);
+          var td = el('td', 'val');
+          renderValue(td, data[k]);
+          tr.appendChild(td); tb.appendChild(tr);
         });
         t.appendChild(tb); container.appendChild(t);
         return;
       }
-      container.appendChild(el('p', null, fmt(data)));
+      container.appendChild(el('span', 'val', fmt(data)));
+    }
+
+    function renderJson(container, data) {
+      var jsonBox = el('pre');
+      var code = el('code'); code.textContent = JSON.stringify(data, null, 2); jsonBox.appendChild(code);
+      var tableBox = el('div'); tableBox.hidden = true; renderFields(tableBox, data);
+      var btn = el('button', 'json-toggle', 'Ver como tabela'); btn.type = 'button';
+      btn.addEventListener('click', function () {
+        if (tableBox.hidden) { tableBox.hidden = false; jsonBox.hidden = true; btn.textContent = 'Ver como JSON'; }
+        else { tableBox.hidden = true; jsonBox.hidden = false; btn.textContent = 'Ver como tabela'; }
+      });
+      container.appendChild(btn);
+      container.appendChild(jsonBox);
+      container.appendChild(tableBox);
     }
 
     function compactJson(text) {
@@ -1203,6 +1266,8 @@ curl -s http://localhost:3000/health
       return parts.join(' \\\n');
     }
 
+    var DATE_FIELDS = ['inicio', 'fim', 'data'];
+
     function buildPanel(method, path, meta) {
       var panel = el('div', 'tryit');
       panel.appendChild(el('p', 'tryit-title', 'Experimentar esta rota'));
@@ -1217,7 +1282,7 @@ curl -s http://localhost:3000/health
         });
         if (meta.query) Object.keys(meta.query).forEach(function (k) {
           var lab = el('label', null, k);
-          var inp = el('input'); inp.type = 'text'; inp.value = String(meta.query[k]); inp.dataset.role = 'query'; inp.dataset.key = k;
+          var inp = el('input'); inp.type = DATE_FIELDS.indexOf(k) !== -1 ? 'date' : 'text'; inp.value = String(meta.query[k]); inp.dataset.role = 'query'; inp.dataset.key = k;
           lab.appendChild(inp); row.appendChild(lab); inputs.query[k] = inp;
         });
         panel.appendChild(row);
@@ -1446,9 +1511,7 @@ curl -s http://localhost:3000/health
           var data = null, parsed = false;
           try { data = JSON.parse(text); parsed = true; } catch (e) {}
           if (parsed) {
-            var raw = el('pre'); raw.appendChild(el('code', null, JSON.stringify(data, null, 2))); resp.appendChild(raw);
-            var fields = el('div'); renderFields(fields, data);
-            if (fields.childNodes.length) { resp.appendChild(el('p', 'binary-note', 'Campos:')); resp.appendChild(fields); }
+            renderJson(resp, data);
           } else {
             var pre = el('pre'); pre.appendChild(el('code', null, text)); resp.appendChild(pre);
           }
@@ -1496,6 +1559,7 @@ curl -s http://localhost:3000/health
         } else {
           respEl.appendChild(el('p', 'error-msg', r.j.erro || 'Falha no login.'));
         }
+        if (r.j && typeof r.j === 'object') renderJson(respEl, r.j);
       }).catch(function () {
         respEl.textContent = '';
         respEl.appendChild(el('span', 'status status-err', 'falha'));
@@ -1504,139 +1568,139 @@ curl -s http://localhost:3000/health
 
     var RESPOSTAS = {
       'GET /health': {
-        '200': 'Sucesso. Resposta: { "status": "ok", "banco": "ok" } (API e banco respondendo).',
-        '503': 'Serviço indisponível. Resposta: { "status": "degraded", "banco": "erro" } (banco fora do ar).'
+        '200': { s: 'Sucesso.', r: '{ "status": "ok", "banco": "ok" }', n: 'API e banco respondendo.' },
+        '503': { s: 'Serviço indisponível.', r: '{ "status": "degraded", "banco": "erro" }', n: 'Banco fora do ar.' }
       },
       'POST /auth/cadastro': {
-        '201': 'Usuário criado. Resposta: { "id": 1, "nome": "Ana", "email": "ana@email.com" } (cria também 9 categorias padrão e a fonte "Conta corrente").',
-        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { "nome"|"email"|"cpf"|"senha": "mensagem" } }.',
-        '409': 'Conflito de unicidade. Resposta: { "erro": "Conflito.", "campos": { "email"|"cpf": "já cadastrado." } }.',
-        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+        '201': { s: 'Usuário criado.', r: '{ "id": 1, "nome": "Ana", "email": "ana@email.com" }', n: 'Cria também 9 categorias padrão e a fonte "Conta corrente".' },
+        '400': { s: 'Dados inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { "nome"|"email"|"cpf"|"senha": "mensagem" } }' },
+        '409': { s: 'Conflito de unicidade.', r: '{ "erro": "Conflito.", "campos": { "email"|"cpf": "já cadastrado." } }' },
+        '500': { s: 'Erro interno.', r: '{ "erro": "Erro interno do servidor." }' }
       },
       'POST /auth/login': {
-        '200': 'Login OK. Resposta: { "token": "<JWT HS256, expira em 1h>", "usuario": { "id", "nome", "email" } }.',
-        '401': 'Credenciais inválidas. Resposta: { "erro": "E-mail ou senha inválidos." }.',
-        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+        '200': { s: 'Login OK.', r: '{ "token": "<JWT HS256, expira em 1h>", "usuario": { "id", "nome", "email" } }' },
+        '401': { s: 'Credenciais inválidas.', r: '{ "erro": "E-mail ou senha inválidos." }' },
+        '500': { s: 'Erro interno.', r: '{ "erro": "Erro interno do servidor." }' }
       },
       'GET /auth/me': {
-        '200': 'Usuário autenticado. Resposta: { "id", "nome", "email", "cpf", "criado_em" }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
-        '404': 'Usuário não encontrado. Resposta: { "erro": "Usuário não encontrado." }.'
+        '200': { s: 'Usuário autenticado.', r: '{ "id", "nome", "email", "cpf", "criado_em" }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' },
+        '404': { s: 'Usuário não encontrado.', r: '{ "erro": "Usuário não encontrado." }' }
       },
       'GET /categorias': {
-        '200': 'Lista de categorias. Resposta: [ { "id", "nome", "tipo", "classificacao" } ] (ordenadas por nome).',
-        '400': 'Query inválida. Resposta: { "erro": "Dados inválidos.", "campos": { "tipo": "Tipo deve ser entrada ou saida." } }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Lista de categorias.', r: '[ { "id", "nome", "tipo", "classificacao" } ]', n: 'Ordenadas por nome.' },
+        '400': { s: 'Query inválida.', r: '{ "erro": "Dados inválidos.", "campos": { "tipo": "Tipo deve ser entrada ou saida." } }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'POST /categorias': {
-        '201': 'Categoria criada. Resposta: { "id", "nome", "tipo", "classificacao" }.',
-        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { "nome"|"tipo"|"classificacao": "mensagem" } }.',
-        '409': 'Nome duplicado. Resposta: { "erro": "Categoria já cadastrada.", "campos": { "nome": "Já existe uma categoria com este nome e tipo." } }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '201': { s: 'Categoria criada.', r: '{ "id", "nome", "tipo", "classificacao" }' },
+        '400': { s: 'Dados inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { "nome"|"tipo"|"classificacao": "mensagem" } }' },
+        '409': { s: 'Nome duplicado.', r: '{ "erro": "Categoria já cadastrada.", "campos": { "nome": "Já existe uma categoria com este nome e tipo." } }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'PUT /categorias/:id': {
-        '200': 'Categoria atualizada. Resposta: { "id", "nome", "tipo", "classificacao" }.',
-        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } } (id inválido, campos inválidos ou nenhum campo para atualizar).',
-        '404': 'Não encontrada (ou de outro usuário). Resposta: { "erro": "Categoria não encontrada." }.',
-        '409': 'Conflito. Resposta: { "erro": "Categoria já cadastrada.", ... } ou { "erro": "Não é possível alterar o tipo: existem lançamentos vinculados a esta categoria." }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Categoria atualizada.', r: '{ "id", "nome", "tipo", "classificacao" }' },
+        '400': { s: 'Dados inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { ... } }', n: 'Id inválido, campos inválidos ou nenhum campo para atualizar.' },
+        '404': { s: 'Não encontrada (ou de outro usuário).', r: '{ "erro": "Categoria não encontrada." }' },
+        '409': { s: 'Conflito.', r: '{ "erro": "Categoria já cadastrada.", ... } ou { "erro": "Não é possível alterar o tipo: existem lançamentos vinculados a esta categoria." }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'DELETE /categorias/:id': {
-        '204': 'Excluída. Sem corpo na resposta.',
-        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
-        '404': 'Não encontrada. Resposta: { "erro": "Categoria não encontrada." }.',
-        '409': 'Tem lançamentos. Resposta: { "erro": "Não é possível excluir: existem lançamentos vinculados a esta categoria." }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '204': { s: 'Excluída.', r: 'Sem corpo na resposta.' },
+        '400': { s: 'ID inválido.', r: '{ "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }' },
+        '404': { s: 'Não encontrada.', r: '{ "erro": "Categoria não encontrada." }' },
+        '409': { s: 'Tem lançamentos.', r: '{ "erro": "Não é possível excluir: existem lançamentos vinculados a esta categoria." }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'GET /fontes-destinos': {
-        '200': 'Lista de fontes/destinos. Resposta: [ { "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" } ].',
-        '400': 'Query inválida. Resposta: { "erro": "Dados inválidos.", "campos": { "tipo": "Tipo deve ser renda, conta ou cartao_credito." } }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Lista de fontes/destinos.', r: '[ { "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" } ]' },
+        '400': { s: 'Query inválida.', r: '{ "erro": "Dados inválidos.", "campos": { "tipo": "Tipo deve ser renda, conta ou cartao_credito." } }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'POST /fontes-destinos': {
-        '201': 'Criada. Resposta: { "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" }.',
-        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } } (cartão exige dia_fechamento, dia_vencimento e limite).',
-        '409': 'Nome duplicado. Resposta: { "erro": "Fonte/destino já cadastrado.", "campos": { "nome": "Já existe uma fonte/destino com este nome." } }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '201': { s: 'Criada.', r: '{ "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" }' },
+        '400': { s: 'Dados inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { ... } }', n: 'Cartão exige dia_fechamento, dia_vencimento e limite.' },
+        '409': { s: 'Nome duplicado.', r: '{ "erro": "Fonte/destino já cadastrado.", "campos": { "nome": "Já existe uma fonte/destino com este nome." } }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'PUT /fontes-destinos/:id': {
-        '200': 'Atualizada. Resposta: { "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" }.',
-        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
-        '404': 'Não encontrada. Resposta: { "erro": "Fonte/destino não encontrado." }.',
-        '409': 'Conflito. Resposta: { "erro": "Fonte/destino já cadastrado.", ... } ou { "erro": "Não é possível alterar o tipo: existem lançamentos vinculados a esta fonte/destino." }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Atualizada.', r: '{ "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" }' },
+        '400': { s: 'Dados inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { ... } }' },
+        '404': { s: 'Não encontrada.', r: '{ "erro": "Fonte/destino não encontrado." }' },
+        '409': { s: 'Conflito.', r: '{ "erro": "Fonte/destino já cadastrado.", ... } ou { "erro": "Não é possível alterar o tipo: existem lançamentos vinculados a esta fonte/destino." }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'DELETE /fontes-destinos/:id': {
-        '204': 'Excluída. Sem corpo na resposta.',
-        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
-        '404': 'Não encontrada. Resposta: { "erro": "Fonte/destino não encontrado." }.',
-        '409': 'Tem lançamentos. Resposta: { "erro": "Não é possível excluir: existem lançamentos vinculados a esta fonte/destino." }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '204': { s: 'Excluída.', r: 'Sem corpo na resposta.' },
+        '400': { s: 'ID inválido.', r: '{ "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }' },
+        '404': { s: 'Não encontrada.', r: '{ "erro": "Fonte/destino não encontrado." }' },
+        '409': { s: 'Tem lançamentos.', r: '{ "erro": "Não é possível excluir: existem lançamentos vinculados a esta fonte/destino." }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'GET /lancamentos': {
-        '200': 'Página de lançamentos. Resposta: { "periodo": { "inicio", "fim" }, "resumo": { "entradas", "saidas", "saldo" }, "pagina", "totalPaginas", "itens": [ { "id", "tipo", "descricao", "valor", "data", "categoria": { "id", "nome" }, "fonteDestino": { "id", "nome", "tipo" }, "parcela" } ] } (20 por página).',
-        '400': 'Filtros inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Página de lançamentos.', r: '{ "periodo": { "inicio", "fim" }, "resumo": { "entradas", "saidas", "saldo" }, "pagina", "totalPaginas", "itens": [ { "id", "tipo", "descricao", "valor", "data", "categoria": { "id", "nome" }, "fonteDestino": { "id", "nome", "tipo" }, "parcela" } ] }', n: '20 por página.' },
+        '400': { s: 'Filtros inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { ... } }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'GET /lancamentos/:id': {
-        '200': 'Lançamento. Resposta: { "id", "tipo", "descricao", "valor", "data", "categoria": { "id", "nome" }, "fonteDestino": { "id", "nome", "tipo" }, "parcela" }.',
-        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
-        '404': 'Não encontrado (ou de outro usuário). Resposta: { "erro": "Lançamento não encontrado." }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Lançamento.', r: '{ "id", "tipo", "descricao", "valor", "data", "categoria": { "id", "nome" }, "fonteDestino": { "id", "nome", "tipo" }, "parcela" }' },
+        '400': { s: 'ID inválido.', r: '{ "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }' },
+        '404': { s: 'Não encontrado (ou de outro usuário).', r: '{ "erro": "Lançamento não encontrado." }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'POST /lancamentos': {
-        '201': 'Criado. Resposta: { "id": <id da 1ª parcela>, "quantidade": <nº de parcelas>, "grupo": "<UUID>" | null }.',
-        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } } (parcelamento só para saída em cartão de crédito).',
-        '404': 'Categoria/fonte inexistente. Resposta: { "erro": "Categoria não encontrada." } ou { "erro": "Fonte/destino não encontrado." } ou { "erro": "Categoria ou fonte/destino não encontrado." }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '201': { s: 'Criado.', r: '{ "id": <id da 1ª parcela>, "quantidade": <nº de parcelas>, "grupo": "<UUID>" | null }' },
+        '400': { s: 'Dados inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { ... } }', n: 'Parcelamento só para saída em cartão de crédito.' },
+        '404': { s: 'Categoria/fonte inexistente.', r: '{ "erro": "Categoria não encontrada." } ou { "erro": "Fonte/destino não encontrado." } ou { "erro": "Categoria ou fonte/destino não encontrado." }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'PUT /lancamentos/:id': {
-        '200': 'Atualizado. Resposta: lançamento atualizado (mesma forma do GET /lancamentos/:id).',
-        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
-        '404': 'Não encontrado. Resposta: { "erro": "Lançamento não encontrado." } (ou "Categoria não encontrada." / "Fonte/destino não encontrado.").',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Atualizado.', r: 'Lançamento atualizado (mesma forma do GET /lancamentos/:id).' },
+        '400': { s: 'Dados inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { ... } }' },
+        '404': { s: 'Não encontrado.', r: '{ "erro": "Lançamento não encontrado." }', n: 'Ou "Categoria não encontrada." / "Fonte/destino não encontrado."' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'DELETE /lancamentos/:id': {
-        '204': 'Excluído. Sem corpo na resposta.',
-        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
-        '404': 'Não encontrado. Resposta: { "erro": "Lançamento não encontrado." }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '204': { s: 'Excluído.', r: 'Sem corpo na resposta.' },
+        '400': { s: 'ID inválido.', r: '{ "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }' },
+        '404': { s: 'Não encontrado.', r: '{ "erro": "Lançamento não encontrado." }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'GET /lancamentos/importar/modelo': {
-        '200': 'Arquivo modelo. Resposta binária: .xlsx (padrão) ou CSV com BOM (?formato=csv), com Content-Disposition: attachment.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
-        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+        '200': { s: 'Arquivo modelo.', r: 'Resposta binária: .xlsx (padrão) ou CSV com BOM (?formato=csv)', n: 'Content-Disposition: attachment.' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' },
+        '500': { s: 'Erro interno.', r: '{ "erro": "Erro interno do servidor." }' }
       },
       'POST /lancamentos/importar': {
-        '201': 'Importado. Resposta: { "importados": n, "lancamentos": n, "categoriasCriadas": n, "fontesCriadas": n }.',
-        '400': 'Arquivo/linhas inválidas. Resposta: { "erro": "Importação cancelada: N erro(s) encontrado(s).", "linhas": [ { "linha", "coluna", "mensagem" } ] } (ou "Arquivo vazio." / "Formato não suportado." / "Não foi possível ler o arquivo." / "Nenhum lançamento para importar.").',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
-        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+        '201': { s: 'Importado.', r: '{ "importados": n, "lancamentos": n, "categoriasCriadas": n, "fontesCriadas": n }' },
+        '400': { s: 'Arquivo/linhas inválidas.', r: '{ "erro": "Importação cancelada: N erro(s) encontrado(s).", "linhas": [ { "linha", "coluna", "mensagem" } ] }', n: 'Ou "Arquivo vazio." / "Formato não suportado." / "Não foi possível ler o arquivo." / "Nenhum lançamento para importar."' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' },
+        '500': { s: 'Erro interno.', r: '{ "erro": "Erro interno do servidor." }' }
       },
       'GET /lancamentos/exportar': {
-        '200': 'Arquivo .xlsx com todos os lançamentos (sem paginação). Resposta binária, Content-Disposition: attachment.',
-        '400': 'Filtros inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
-        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+        '200': { s: 'Arquivo .xlsx com todos os lançamentos (sem paginação).', r: 'Resposta binária', n: 'Content-Disposition: attachment.' },
+        '400': { s: 'Filtros inválidos.', r: '{ "erro": "Dados inválidos.", "campos": { ... } }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' },
+        '500': { s: 'Erro interno.', r: '{ "erro": "Erro interno do servidor." }' }
       },
       'GET /relatorios/categorias': {
-        '200': 'Relatório. Resposta: { "periodo": { "inicio", "fim" }, "periodoAnterior": { "inicio", "fim" }, "saidas": { "total", "categorias": [ { "id", "nome", "total", "percentual", "anterior", "variacao" } ] }, "entradas": { ... } }.',
-        '400': 'Datas inválidas. Resposta: { "erro": "Dados inválidos.", "campos": { "inicio"|"fim": "Obrigatório." | "Data inválida." } } (ou inicio > fim).',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Relatório.', r: '{ "periodo": { "inicio", "fim" }, "periodoAnterior": { "inicio", "fim" }, "saidas": { "total", "categorias": [ { "id", "nome", "total", "percentual", "anterior", "variacao" } ] }, "entradas": { ... } }' },
+        '400': { s: 'Datas inválidas.', r: '{ "erro": "Dados inválidos.", "campos": { "inicio"|"fim": "Obrigatório." | "Data inválida." } }', n: 'Ou inicio > fim.' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'GET /relatorios/fontes-destinos': {
-        '200': 'Relatório. Resposta: { "periodo": { "inicio", "fim" }, "entradas": [ { "id", "nome", "total" } ], "saidas": [ ... ], "contas": [ { "id", "nome", "entradas", "saidas", "saldo" } ] }.',
-        '400': 'Datas inválidas. Resposta: { "erro": "Dados inválidos.", "campos": { "inicio"|"fim": "Obrigatório." | "Data inválida." } } (ou inicio > fim).',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Relatório.', r: '{ "periodo": { "inicio", "fim" }, "entradas": [ { "id", "nome", "total" } ], "saidas": [ ... ], "contas": [ { "id", "nome", "entradas", "saidas", "saldo" } ] }' },
+        '400': { s: 'Datas inválidas.', r: '{ "erro": "Dados inválidos.", "campos": { "inicio"|"fim": "Obrigatório." | "Data inválida." } }', n: 'Ou inicio > fim.' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'GET /relatorios/faturas': {
-        '200': 'Relatório. Resposta: { "hoje": "AAAA-MM-DD", "cartoes": [ { "id", "nome", "limite", "limiteUtilizado", "limiteDisponivel", "faturas": [ { "referencia", "fechamento", "vencimento", "total", "lancamentos": [ { "id", "descricao", "parcela", "valor" } ] } ] } ] }.',
-        '400': 'meses inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "meses": "Deve ser inteiro entre 1 e 12." } }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Relatório.', r: '{ "hoje": "AAAA-MM-DD", "cartoes": [ { "id", "nome", "limite", "limiteUtilizado", "limiteDisponivel", "faturas": [ { "referencia", "fechamento", "vencimento", "total", "lancamentos": [ { "id", "descricao", "parcela", "valor" } ] } ] } ] }' },
+        '400': { s: 'meses inválido.', r: '{ "erro": "Dados inválidos.", "campos": { "meses": "Deve ser inteiro entre 1 e 12." } }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       },
       'GET /saude-financeira': {
-        '200': 'Análise. Resposta: { "aviso", "indicadores": { ...11 indicadores... }, "projecao": [ ...6 meses... ], "dicas": [ "..." ] }.',
-        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+        '200': { s: 'Análise.', r: '{ "aviso", "indicadores": { ...11 indicadores... }, "projecao": [ ...6 meses... ], "dicas": [ "..." ] }' },
+        '401': { s: 'Token ausente, inválido ou expirado.', r: '{ "erro": "Token ausente, inválido ou expirado." }' }
       }
     };
 
@@ -1830,17 +1894,36 @@ curl -s http://localhost:3000/health
           var codigos = celula.textContent.trim().split(/\s*,\s*/).filter(Boolean);
           celula.textContent = '';
           codigos.forEach(function (codigo, i) {
-            if (i > 0) celula.appendChild(document.createTextNode(', '));
+            if (i > 0) celula.appendChild(document.createTextNode(' '));
             var span = el('span', 'status-code', codigo);
-            var porRota = RESPOSTAS[chave];
-            var texto = porRota && porRota[codigo] ? ('Status ' + codigo + ' — ' + porRota[codigo]) : null;
-            if (texto) {
+            var info = RESPOSTAS[chave] && RESPOSTAS[chave][codigo];
+            if (info) {
               var tip = el('span', 'info-tip info-tip--right info-tip--sm');
               tip.setAttribute('tabindex', '0');
-              tip.setAttribute('aria-label', texto);
+              tip.setAttribute('aria-label', 'Status ' + codigo + ': ' + info.s);
               var pop = el('span', 'info-tip__pop');
               pop.setAttribute('role', 'tooltip');
-              pop.textContent = texto;
+              pop.appendChild(el('span', 'tip-head', 'Status ' + codigo));
+              var tipTable = el('table', 'tip-table');
+              var tb = el('tbody');
+              var trS = el('tr');
+              trS.appendChild(el('th', null, 'Significado'));
+              trS.appendChild(el('td', null, info.s));
+              tb.appendChild(trS);
+              var trR = el('tr');
+              trR.appendChild(el('th', null, 'Resposta esperada'));
+              var tdR = el('td');
+              var codeR = el('code', null, info.r); tdR.appendChild(codeR);
+              trR.appendChild(tdR);
+              tb.appendChild(trR);
+              if (info.n) {
+                var trN = el('tr');
+                trN.appendChild(el('th', null, 'Obs.'));
+                trN.appendChild(el('td', null, info.n));
+                tb.appendChild(trN);
+              }
+              tipTable.appendChild(tb);
+              pop.appendChild(tipTable);
               tip.appendChild(pop);
               tip.appendChild(document.createTextNode('?'));
               span.appendChild(tip);
@@ -1986,6 +2069,171 @@ curl -s http://localhost:3000/health
       initSidebarToggle();
     }
 
+    var CHECKLIST = [
+      { passos: [ { m: 'POST', p: '/auth/cadastro', body: { nome: 'Outro', email: 'ANA@EMAIL.COM', cpf: '86429753182', senha: 'Demo@1234' }, esperado: 409, desc: 'E-mail em MAIÚSCULAS já existente' } ] },
+      { passos: [ { m: 'POST', p: '/auth/cadastro', body: { nome: 'Outro', email: 'outro2@email.com', cpf: '529.982.247-25', senha: 'Demo@1234' }, esperado: 409, desc: 'CPF pontuado já existente' } ] },
+      { passos: [ { m: 'POST', p: '/auth/cadastro', body: { nome: 'X', email: 'ana@email.com', cpf: '86429753182', senha: 'Demo@1234' }, esperado: 409, desc: 'E-mail duplicado → UNIQUE do banco' } ], nota: 'O 409 vem da constraint UNIQUE (uq_usuarios_email); o INSERT direto no MySQL está no comando acima.' },
+      { passos: [ { m: 'GET', p: '/auth/me', esperado: 200, desc: 'GET /auth/me' }, { m: 'POST', p: '/auth/login', body: { email: 'ana@email.com', senha: 'Ana@1234' }, esperado: 200, desc: 'POST /auth/login' } ],
+        verificar: function (rs) { var n = 0; rs.forEach(function (r) { n += ((r.texto || '').match(/senha_hash/g) || []).length; }); return n === 0 ? '✓ 0 ocorrências de senha_hash nas respostas.' : ('✗ ' + n + ' ocorrência(s) de senha_hash!'); } },
+      { passos: [ { m: 'GET', p: '/categorias', auth: 'none', esperado: 401, desc: 'Sem token' }, { m: 'GET', p: '/categorias', auth: 'invalid', esperado: 401, desc: 'Token inválido/expirado' } ] },
+      { passos: [ { m: 'PUT', p: '/categorias/3', auth: 'bruno', body: { nome: 'Hack' }, esperado: 404, desc: 'Bruno editando categoria da Ana (id 3)' }, { m: 'DELETE', p: '/fontes-destinos/1', auth: 'bruno', esperado: 404, desc: 'Bruno excluindo fonte da Ana (id 1)' } ] },
+      { passos: [ { m: 'POST', p: '/lancamentos', body: { tipo: 'saida', descricao: 'Erro', valor: 100, data: '2026-01-10', categoriaId: 1, fonteDestinoId: 1 }, esperado: 400, desc: 'Saída usando categoria 1 (entrada)' } ] },
+      { passos: [ { m: 'POST', p: '/lancamentos', body: { tipo: 'saida', descricao: 'Teste 100/3', valor: 100, data: '2026-01-20', categoriaId: 9, fonteDestinoId: 3, parcelas: 3 }, esperado: 201, desc: 'Cria R$100 em 3x' }, { m: 'GET', p: '/lancamentos', query: function (rs) { return { grupo: (rs[0] && rs[0].json && rs[0].json.grupo) || '' }; }, esperado: 200, desc: 'Só as parcelas desse grupo (?grupo=)' } ],
+        verificar: function (rs) { var j = rs[1] && rs[1].json; if (!j || !j.itens) return 'Não foi possível ler a lista.'; var itens = j.itens.slice().sort(function (a, b) { return a.id - b.id; }); if (!itens.length) return 'Nenhuma parcela no grupo — confirme o filtro ?grupo= (a API precisa estar atualizada).'; var vals = itens.map(function (x) { return x.valor; }); var soma = vals.reduce(function (a, b) { return a + b; }, 0); return 'Parcelas do grupo (' + itens.length + '): ' + vals.join(' + ') + ' = ' + soma.toFixed(2) + (Math.abs(soma - 100) < 0.001 ? ' ✓' : ' ✗'); } },
+      { passos: [ { m: 'POST', p: '/lancamentos', body: { tipo: 'saida', descricao: 'No fechamento', valor: 50, data: '2026-11-03', categoriaId: 9, fonteDestinoId: 3 }, esperado: 201, desc: 'Compra em 2026-11-03 (cartão id 3 fecha dia 3)' }, { m: 'GET', p: '/relatorios/faturas', query: { cartaoId: '3', meses: '2' }, esperado: 200, desc: 'Faturas só do cartão 3 (o da compra)' } ],
+        verificar: function (rs) { var j = rs[1] && rs[1].json; if (!j || !j.cartoes) return 'Não foi possível ler as faturas.'; var achou = null; j.cartoes.forEach(function (c) { (c.faturas || []).forEach(function (f) { (f.lancamentos || []).forEach(function (l) { if (l.descricao === 'No fechamento') achou = { cartao: c.nome, referencia: f.referencia }; }); }); }); return achou ? ('Compra No fechamento caiu na fatura ' + achou.referencia + ' do cartão ' + achou.cartao + (achou.referencia === '2026-12' ? ' ✓ (mês seguinte)' : ' (esperado 2026-12)')) : 'Não encontrei a compra nas faturas.'; } },
+      { passos: [ { m: 'GET', p: '/relatorios/categorias', query: { inicio: '2026-01-01', fim: '2026-12-31' }, esperado: 200, desc: 'Relatório por categoria' } ],
+        verificar: function (rs) { var j = rs[0] && rs[0].json; if (!j || !j.saidas) return 'Não foi possível ler o relatório.'; var a = typeof j.saidas.total; var b = typeof ((j.saidas.categorias || [])[0] || {}).total; return 'typeof saidas.total = ' + a + '; typeof categorias[0].total = ' + b + (a === 'number' && b === 'number' ? ' ✓' : ' ✗'); } },
+      { passos: [], nota: 'Item de repositório (não é HTTP). No terminal: git check-ignore .env e git ls-files .env.example.' },
+      { passos: [ { m: 'GET', p: '/health', esperado: 200, desc: 'API de pé (GET /health)' } ], nota: 'Reprodução completa: docker compose down -v && cp .env.example .env && docker compose up -d --build → db e api healthy.' }
+    ];
+
+    function clLogin(email, senha, cache, key) {
+      if (cache[key] !== undefined) return Promise.resolve(cache[key]);
+      return fetch(API_BASE + '/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ email: email, senha: senha }) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { cache[key] = j && j.token ? j.token : ''; return cache[key]; })
+        .catch(function () { cache[key] = ''; return ''; });
+    }
+
+    function clRun(item, out, btn) {
+      out.hidden = false;
+      out.textContent = '';
+      btn.disabled = true;
+      var cache = {};
+      var respostas = [];
+      var passos = item.passos || [];
+
+      function finalizar() {
+        if (item.verificar) {
+          var msg = '';
+          try { msg = item.verificar(respostas) || ''; } catch (e) { msg = 'Erro na verificação: ' + e.message; }
+          if (msg) out.appendChild(el('p', 'cl-verdict ' + (msg.indexOf('✓') !== -1 ? 'ok' : 'err'), msg));
+        }
+        if (item.nota) out.appendChild(el('p', 'cl-nota', item.nota));
+        btn.disabled = false;
+      }
+
+      function passo(i) {
+        if (i >= passos.length) return finalizar();
+        var s = passos[i];
+        var authP;
+        if (s.auth === 'none') authP = Promise.resolve(null);
+        else if (s.auth === 'invalid') authP = Promise.resolve('token-invalido');
+        else if (s.auth === 'bruno') authP = clLogin('bruno@email.com', 'Bruno@1234', cache, 'bruno');
+        else authP = clLogin('ana@email.com', 'Ana@1234', cache, 'ana');
+        authP.then(function (token) {
+          var pPath = typeof s.p === 'function' ? s.p(respostas) : s.p;
+          var q = typeof s.query === 'function' ? s.query(respostas) : s.query;
+          var url = API_BASE + pPath;
+          if (q) {
+            var qs = Object.keys(q).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(q[k]); });
+            if (qs.length) url += '?' + qs.join('&');
+          }
+          var headers = { Accept: 'application/json' };
+          if (s.body !== undefined) headers['Content-Type'] = 'application/json';
+          if (token) headers.Authorization = 'Bearer ' + token;
+          var opts = { method: s.m, headers: headers, cache: 'no-store' };
+          if (s.body !== undefined) opts.body = JSON.stringify(s.body);
+          return fetch(url, opts).then(function (res) {
+            return res.text().then(function (t) {
+              var j = null; try { j = JSON.parse(t); } catch (e) {}
+              return { status: res.status, texto: t, json: j, esperado: s.esperado };
+            });
+          });
+        }).then(function (r) {
+          respostas.push(r);
+          var ok = r.status === s.esperado;
+          var bloco = el('div', 'cl-step');
+          bloco.appendChild(el('p', 'cl-desc', (i + 1) + '. ' + s.m + ' ' + s.p + ' — esperado ' + s.esperado + (s.desc ? ' · ' + s.desc : '')));
+          bloco.appendChild(el('span', 'status ' + statusClass(r.status), r.status + (ok ? ' ✓' : ' ✗ (esperado ' + s.esperado + ')')));
+          if (r.json !== null) { renderJson(bloco, r.json); }
+          else { var pre = el('pre'); pre.appendChild(el('code', null, r.texto || '')); bloco.appendChild(pre); }
+          out.appendChild(bloco);
+          passo(i + 1);
+        }).catch(function (e) {
+          var bloco = el('div', 'cl-step');
+          bloco.appendChild(el('p', 'cl-desc', (i + 1) + '. ' + s.m + ' ' + s.p));
+          bloco.appendChild(el('p', 'error-msg', 'Falha: ' + (e && e.message ? e.message : 'erro')));
+          out.appendChild(bloco);
+          passo(i + 1);
+        });
+      }
+      passo(0);
+    }
+
+    function montarChecklist() {
+      var sec = document.getElementById('checklist');
+      if (!sec) return;
+      Array.prototype.forEach.call(sec.querySelectorAll('h3'), function (h3, i) {
+        var item = CHECKLIST[i];
+        if (!item) return;
+        var panel = el('div', 'tryit checklist-demo');
+        panel.appendChild(el('p', 'tryit-title', 'Demonstração na prática'));
+        var row = el('div', 'row');
+        var btn = el('button', 'btn btn-primary', 'Testar na prática'); btn.type = 'button';
+        row.appendChild(btn);
+        var out = el('div'); out.hidden = true;
+        panel.appendChild(row);
+        panel.appendChild(out);
+        btn.addEventListener('click', function () { clRun(item, out, btn); });
+        var last = h3, node = h3.nextElementSibling;
+        while (node && node.tagName !== 'H3' && node.tagName !== 'H2') { last = node; node = node.nextElementSibling; }
+        if (last.parentNode) last.parentNode.insertBefore(panel, last.nextSibling);
+      });
+    }
+
+    var GH_FILES = {
+      'routes/auth.js': 'blob/main/routes/auth.js',
+      'utils/cpf.js': 'blob/main/utils/cpf.js',
+      'models/Usuario.js': 'blob/main/models/Usuario.js',
+      'database/schema.sql': 'blob/main/database/schema.sql',
+      'middleware/auth.js': 'blob/main/middleware/auth.js',
+      'server.js': 'blob/main/server.js',
+      'routes/categorias.js': 'blob/main/routes/categorias.js',
+      'routes/fontesDestinos.js': 'blob/main/routes/fontesDestinos.js',
+      'routes/lancamentos.js': 'blob/main/routes/lancamentos.js',
+      'models/Lancamento.js': 'blob/main/models/Lancamento.js',
+      'utils/parcelas.js': 'blob/main/utils/parcelas.js',
+      'routes/relatorios.js': 'blob/main/routes/relatorios.js',
+      'models/Relatorio.js': 'blob/main/models/Relatorio.js',
+      'utils/datas.js': 'blob/main/utils/datas.js',
+      'utils/faturas.js': 'blob/main/utils/faturas.js',
+      'routes/saudeFinanceira.js': 'blob/main/routes/saudeFinanceira.js',
+      'utils/saude.js': 'blob/main/utils/saude.js',
+      'models/Saude.js': 'blob/main/models/Saude.js',
+      'package.json': 'blob/main/package.json',
+      '.env.example': 'blob/main/.env.example',
+      '.gitignore': 'blob/main/.gitignore',
+      'testes/requisicoes.md': 'blob/main/testes/requisicoes.md',
+      'README': 'blob/main/README.md',
+      'schema.sql': 'blob/main/database/schema.sql',
+      'seed.sql': 'blob/main/database/seed.sql',
+      'models/': 'tree/main/models',
+      'models/*.js': 'tree/main/models',
+      'routes/*.js': 'tree/main/routes',
+      'database/': 'tree/main/database',
+      'npm test': 'tree/main/testes/unit'
+    };
+
+    function linkGitHub() {
+      var root = document.querySelector('main');
+      if (!root) return;
+      var base = 'https://github.com/PuraFome/trabalho-backend/';
+      Array.prototype.forEach.call(root.querySelectorAll('code'), function (c) {
+        if (c.closest('a')) return;
+        var path = GH_FILES[c.textContent.trim()];
+        if (!path) return;
+        var a = el('a', 'gh');
+        a.href = base + path;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.title = 'Abrir no GitHub';
+        c.parentNode.insertBefore(a, c);
+        a.appendChild(c);
+      });
+    }
+
     function init() {
       Array.prototype.forEach.call(document.querySelectorAll('.base-url'), function (n) { n.textContent = API_BASE; });
 
@@ -2005,6 +2253,8 @@ curl -s http://localhost:3000/health
         if (last.parentNode) last.parentNode.insertBefore(panel, last.nextSibling);
       });
       enhanceStatusTooltips();
+      montarChecklist();
+      linkGitHub();
       initSidebar();
     }
 

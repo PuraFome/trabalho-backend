@@ -287,7 +287,7 @@ Use o usuário do seed: `ana@email.com` / `Ana@1234`.
 | POST | `/fontes-destinos` | Sim | `{nome,tipo,dia_fechamento?,dia_vencimento?,limite?,reserva?}` | 201, 400, 409, 401 |
 | PUT | `/fontes-destinos/:id` | Sim | `{nome?,tipo?,dia_fechamento?,dia_vencimento?,limite?,reserva?}` | 200, 400, 404, 409, 401 |
 | DELETE | `/fontes-destinos/:id` | Sim | — | 204, 400, 404, 409, 401 |
-| GET | `/lancamentos` | Sim | `?inicio&fim&tipo&categoriaId&fonteDestinoId&pagina` | 200, 400, 401 |
+| GET | `/lancamentos` | Sim | `?inicio&fim&tipo&categoriaId&fonteDestinoId&pagina&grupo` | 200, 400, 401 |
 | GET | `/lancamentos/:id` | Sim | — | 200, 400, 404, 401 |
 | POST | `/lancamentos` | Sim | `{tipo,descricao,valor,data,categoriaId,fonteDestinoId,parcelas?}` | 201, 400, 404, 401 |
 | PUT | `/lancamentos/:id` | Sim | `{tipo?,descricao?,valor?,data?,categoriaId?,fonteDestinoId?}` | 200, 400, 404, 401 |
@@ -297,7 +297,7 @@ Use o usuário do seed: `ana@email.com` / `Ana@1234`.
 | GET | `/lancamentos/exportar` | Sim | `?inicio&fim&tipo` (opcionais) | 200, 400, 401, 500 |
 | GET | `/relatorios/categorias` | Sim | `inicio,fim` (obrigatórios) | 200, 400, 401 |
 | GET | `/relatorios/fontes-destinos` | Sim | `inicio,fim` (obrigatórios) | 200, 400, 401 |
-| GET | `/relatorios/faturas` | Sim | `?meses=3` (1–12) | 200, 400, 401 |
+| GET | `/relatorios/faturas` | Sim | `?meses=3` (1–12), `?cartaoId` | 200, 400, 401 |
 | GET | `/saude-financeira` | Sim | — | 200, 401 |
 
 ### Justificativa do `/health`

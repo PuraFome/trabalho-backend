@@ -130,9 +130,12 @@ class Relatorio {
     return { entradas, saidas, contas };
   }
 
-  async faturas(usuarioId, meses = 3) {
+  async faturas(usuarioId, meses = 3, cartaoId) {
     const FonteDestino = require('./FonteDestino');
-    const cartoes = await FonteDestino.listarCartoes(usuarioId);
+    let cartoes = await FonteDestino.listarCartoes(usuarioId);
+    if (cartaoId) {
+      cartoes = cartoes.filter((c) => c.id === cartaoId);
+    }
 
     if (cartoes.length === 0) {
       return { hoje: hojeUTC(), cartoes: [] };

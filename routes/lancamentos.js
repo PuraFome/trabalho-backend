@@ -19,12 +19,14 @@ function getDefaultPeriod() {
 
 // GET /lancamentos
 router.get('/', async (req, res) => {
-  const { inicio, fim, tipo, categoriaId, fonteDestinoId, pagina } = req.query;
+  const { inicio, fim, tipo, categoriaId, fonteDestinoId, pagina, grupo } = req.query;
   const campos = {};
 
   const { inicio: inicioDefault, fim: fimDefault } = getDefaultPeriod();
-  const inicioFinal = inicio || inicioDefault;
-  const fimFinal = fim || fimDefault;
+  // Ao filtrar por grupo de parcelamento, não aplica o período padrão: as parcelas podem estar em qualquer mês.
+  const usarPeriodoDefault = !grupo;
+  const inicioFinal = inicio || (usarPeriodoDefault ? inicioDefault : null);
+  const fimFinal = fim || (usarPeriodoDefault ? fimDefault : null);
 
   if (inicio && !ehDataValida(inicio)) {
     campos.inicio = 'Data de início inválida. Use AAAA-MM-DD.';
@@ -32,7 +34,7 @@ router.get('/', async (req, res) => {
   if (fim && !ehDataValida(fim)) {
     campos.fim = 'Data de fim inválida. Use AAAA-MM-DD.';
   }
-  if (inicioFinal > fimFinal) {
+  if (inicioFinal && fimFinal && inicioFinal > fimFinal) {
     campos.periodo = 'Data de início deve ser anterior ou igual à data de fim.';
   }
   if (tipo && !TIPOS_VALIDOS.includes(tipo)) {
@@ -56,6 +58,9 @@ router.get('/', async (req, res) => {
       campos.pagina = 'pagina deve ser inteiro >= 1.';
     }
   }
+  if (grupo !== undefined && grupo !== '' && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(grupo)) {
+    campos.grupo = 'grupo deve ser um UUID válido.';
+  }
 
   if (Object.keys(campos).length > 0) {
     return res.status(400).json({ erro: 'Dados inválidos.', campos });
@@ -68,7 +73,8 @@ router.get('/', async (req, res) => {
     tipo,
     categoriaId: categoriaId ? parseInt(categoriaId, 10) : undefined,
     fonteDestinoId: fonteDestinoId ? parseInt(fonteDestinoId, 10) : undefined,
-    pagina: paginaFinal
+    pagina: paginaFinal,
+    grupo: grupo || undefined
   });
 
   const totalPaginas = resultado.total === 0 ? 0 : Math.ceil(resultado.total / 20);

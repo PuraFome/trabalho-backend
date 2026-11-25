@@ -88,7 +88,7 @@ class Lancamento {
     }
   }
 
-  async listar(usuarioId, { inicio, fim, tipo, categoriaId, fonteDestinoId, pagina = 1 }) {
+  async listar(usuarioId, { inicio, fim, tipo, categoriaId, fonteDestinoId, pagina = 1, grupo }) {
     const where = ['l.usuario_id = ?'];
     const params = [usuarioId];
 
@@ -111,6 +111,10 @@ class Lancamento {
     if (fonteDestinoId) {
       where.push('l.fonte_destino_id = ?');
       params.push(fonteDestinoId);
+    }
+    if (grupo) {
+      where.push('l.grupo_parcelamento = ?');
+      params.push(grupo);
     }
 
     const whereSql = where.join(' AND ');
