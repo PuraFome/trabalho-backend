@@ -1,6 +1,6 @@
 const pool = require('../database/connection');
 const Relatorio = require('./Relatorio');
-const { hojeUTC, deslocarMes, periodoAnterior } = require('../utils/datas');
+const { hojeUTC, deslocarMes, somarDias, periodoAnterior } = require('../utils/datas');
 
 class Saude {
   async medias(usuarioId) {
@@ -91,8 +91,8 @@ class Saude {
     const inicioAtual = `${hoje.slice(0, 7)}-01`;
     const fimAtual = hoje;
 
-    const inicioAnterior = deslocarMes(inicioAtual, -3);
-    const fimAnterior = deslocarMes(fimAtual, -3);
+    const inicioAnterior = deslocarMes(`${hoje.slice(0, 7)}-01`, -3);
+    const fimAnterior = somarDias(`${hoje.slice(0, 7)}-01`, -1);
 
     const [atualRows] = await pool.query(
       `SELECT c.id, c.nome, SUM(l.valor) AS total
@@ -104,7 +104,7 @@ class Saude {
     );
 
     const [anteriorRows] = await pool.query(
-      `SELECT c.id, AVG(l.valor) AS media
+      `SELECT c.id, SUM(l.valor) AS total
        FROM lancamentos l
        JOIN categorias c ON c.id = l.categoria_id
        WHERE l.usuario_id = ? AND l.tipo = 'saida' AND l.data BETWEEN ? AND ?
@@ -114,12 +114,13 @@ class Saude {
 
     const anteriorMap = new Map();
     for (const row of anteriorRows) {
-      anteriorMap.set(row.id, Number(row.media));
+      anteriorMap.set(row.id, Number(row.total));
     }
 
     const resultado = [];
     for (const row of atualRows) {
-      const mediaAnterior = anteriorMap.get(row.id) || 0;
+      const totalAnterior = anteriorMap.get(row.id) || 0;
+      const mediaAnterior = Number((totalAnterior / 3).toFixed(2));
       const totalAtual = Number(row.total);
       let ratio = 0;
       if (mediaAnterior > 0) {
@@ -129,7 +130,7 @@ class Saude {
         id: row.id,
         nome: row.nome,
         totalAtual,
-        mediaAnterior: Number(mediaAnterior.toFixed(2)),
+        mediaAnterior,
         ratio: Number(ratio.toFixed(4))
       });
     }
