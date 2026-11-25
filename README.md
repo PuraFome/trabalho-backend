@@ -255,8 +255,9 @@ O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://l
 
 ### GitHub Pages
 
-- **Source:** branch principal, pasta **`/docs`** (Settings → Pages → Build and deployment → Deploy from a branch → `/docs`).
+- **Source:** **GitHub Actions** (Settings → Pages → Build and deployment → Source → **GitHub Actions**). O deploy é feito pelo workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml), que publica a pasta `docs/`.
 - **URL:** `https://SEU_USUARIO.github.io/trabalho-backend/`
+- **Retry automático:** o deploy tenta publicar até 3 vezes, com espera entre tentativas, para absorver erros `5xx` **transitórios** do serviço de Pages (ex.: `Failed to create deployment (status: 500) ... Server error ... re-run the deployment at a later time`), que não têm correção no repositório.
 - `docs/.nojekyll` desativa o processamento Jekyll do GitHub Pages.
 - No backend, inclua a origem do Pages em `CORS_ORIGIN` (ex.: `https://SEU_USUARIO.github.io` — apenas `scheme://host`, **sem** o path do repositório).
 

@@ -28,8 +28,9 @@ npx serve docs -l 4200
 
 ## GitHub Pages
 
-- **Source:** branch principal, pasta **`/docs`** (Settings → Pages → Build and deployment → Deploy from a branch → `/docs`).
+- **Source:** **GitHub Actions** (Settings → Pages → Build and deployment → Source → **GitHub Actions**). O deploy é feito pelo workflow [`.github/workflows/pages.yml`](../.github/workflows/pages.yml), que publica esta pasta `docs/`.
 - **URL:** `https://SEU_USUARIO.github.io/trabalho-backend/`
+- **Retry automático:** o deploy tenta publicar até 3 vezes, com espera entre tentativas, para absorver erros `5xx` **transitórios** do serviço de Pages (não há correção no repositório para esses erros).
 - `docs/.nojekyll` desativa o processamento Jekyll do GitHub Pages.
 - No backend, inclua a origem do Pages em `CORS_ORIGIN` (ex.: `https://SEU_USUARIO.github.io` — apenas `scheme://host`, **sem** o path do repositório).
 
