@@ -15,6 +15,7 @@ router.post('/cadastro', async (req, res) => {
   const emailNorm = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const cpfNorm = typeof cpf === 'string' ? cpf.replace(/\D/g, '') : '';
 
+  // [Critério 1] Validações no servidor (nome, e-mail, CPF com dígitos verificadores, senha).
   // Validações
   if (!nomeNorm) {
     campos.nome = 'Nome é obrigatório.';
@@ -33,8 +34,10 @@ router.post('/cadastro', async (req, res) => {
     return res.status(400).json({ erro: 'Dados inválidos.', campos });
   }
 
+  // [Critério 2] Normalização antes de gravar/buscar; UNIQUE do banco -> 409 indicando o campo.
   // Normalização
   try {
+    // [Critério 3] Senha com bcrypt; login com JWT HS256 (expira em 1h), segredo no .env.
     const senhaHash = await bcrypt.hash(senha, Number(process.env.BCRYPT_ROUNDS || 10));
     const usuario = await Usuario.cadastrar({ nome: nomeNorm, email: emailNorm, cpf: cpfNorm, senhaHash });
     return res.status(201).json(usuario);

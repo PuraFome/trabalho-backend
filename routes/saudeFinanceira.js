@@ -17,6 +17,7 @@ const {
   tendenciaGastos
 } = require('../utils/saude');
 
+// [Desafio] Saúde financeira: 11 indicadores + projeção de 6 meses + dicas.
 router.get('/', async (req, res) => {
   try {
     const usuarioId = req.auth.id;

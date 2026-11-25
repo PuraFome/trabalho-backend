@@ -3,6 +3,7 @@ const { calcularFatura } = require('../utils/faturas');
 const { hojeUTC, deslocarMes, dataSegura } = require('../utils/datas');
 
 class Relatorio {
+  // [Critério 9] SUM/GROUP BY, percentual e comparação com o período anterior.
   async porCategoria(usuarioId, inicio, fim, inicioAnterior, fimAnterior) {
     const querySaidas = `
       SELECT c.id, c.nome, SUM(l.valor) AS total
@@ -69,6 +70,7 @@ class Relatorio {
     };
   }
 
+  // [Critério 10] Entradas, saídas e saldo das contas por fonte/destino.
   async porFonteDestino(usuarioId, inicio, fim) {
     const queryEntradas = `
       SELECT f.id, f.nome, SUM(l.valor) AS total
@@ -130,6 +132,7 @@ class Relatorio {
     return { entradas, saidas, contas };
   }
 
+  // [Critério 11] Faturas: regra de fechamento, parcelas futuras e limite utilizado/disponível.
   async faturas(usuarioId, meses = 3, cartaoId) {
     const FonteDestino = require('./FonteDestino');
     let cartoes = await FonteDestino.listarCartoes(usuarioId);

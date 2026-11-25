@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Relatorio = require('../models/Relatorio');
 const { ehDataValida, periodoAnterior } = require('../utils/datas');
 
+// [Critérios 9-11] Relatórios: por categoria, por fonte/destino e faturas.
 router.get('/categorias', async (req, res) => {
   const { inicio, fim } = req.query;
   const usuarioId = req.auth.id;

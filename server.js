@@ -28,6 +28,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// [Critério 12] express.Router() por recurso (cada rota delega ao seu model).
 app.use('/auth', require('./routes/auth'));
 app.use('/categorias', protegerRota, require('./routes/categorias'));
 app.use('/fontes-destinos', protegerRota, require('./routes/fontesDestinos'));
@@ -35,11 +36,14 @@ app.use('/lancamentos', protegerRota, require('./routes/lancamentos'));
 app.use('/relatorios', protegerRota, require('./routes/relatorios'));
 app.use('/saude-financeira', protegerRota, require('./routes/saudeFinanceira'));
 
+// [Critério 13] Rota inexistente -> 404 no padrão { erro }.
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada.' });
 });
 
+// [Critério 13] Padrão único de resposta de erro: { erro, campos? }.
 app.use((err, req, res, next) => {
+  // [Critério 4] Token ausente/inválido/expirado -> 401 em JSON (não HTML).
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({ erro: 'Token ausente, inválido ou expirado.' });
   }

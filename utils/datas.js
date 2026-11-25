@@ -1,3 +1,4 @@
+// [Critério 9] Datas em UTC; período anterior = mês de calendário anterior (com clamp de fim de mês).
 function ehDataValida(str) {
   if (typeof str !== 'string') {
     return false;

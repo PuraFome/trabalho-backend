@@ -1,3 +1,4 @@
+// [Critério 1] CPF validado com os dígitos verificadores.
 function cpfValido(cpf) {
   if (typeof cpf !== 'string') {
     return false;

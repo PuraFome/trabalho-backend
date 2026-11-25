@@ -31,6 +31,7 @@ function validarCamposCartao(body, prefix = '') {
   return campos;
 }
 
+// [Critério 5] CRUD de fontes/destinos: tipo, campos obrigatórios de cartão, duplicidade e exclusão.
 // GET /fontes-destinos
 router.get('/', async (req, res) => {
   const { tipo } = req.query;

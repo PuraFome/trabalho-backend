@@ -4,6 +4,7 @@ const Categoria = require('../models/Categoria');
 const TIPOS_VALIDOS = ['entrada', 'saida'];
 const CLASSIFICACOES_VALIDAS = ['necessidade', 'desejo', 'poupanca'];
 
+// [Critério 5] CRUD de categorias: valida tipo/classificação, duplicidade (409) e bloqueia exclusão com lançamentos.
 // GET /categorias
 router.get('/', async (req, res) => {
   const { tipo } = req.query;

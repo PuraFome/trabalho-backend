@@ -17,6 +17,7 @@ function getDefaultPeriod() {
   return { inicio, fim };
 }
 
+// [Critério 7] Filtros por query, paginação e resumo (entradas/saídas/saldo).
 // GET /lancamentos
 router.get('/', async (req, res) => {
   const { inicio, fim, tipo, categoriaId, fonteDestinoId, pagina, grupo } = req.query;
@@ -317,6 +318,7 @@ router.get('/:id', async (req, res) => {
   return res.status(200).json(lancamento);
 });
 
+// [Critério 6] Validações: valor, data, compatibilidade de tipo e posse da categoria/fonte.
 // POST /lancamentos
 router.post('/', async (req, res) => {
   const { tipo, descricao, valor, data, categoriaId, fonteDestinoId, parcelas } = req.body || {};

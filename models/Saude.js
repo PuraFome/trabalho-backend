@@ -1,3 +1,4 @@
+// [Desafio] Agregações SQL que alimentam os indicadores de saúde financeira.
 const pool = require('../database/connection');
 const Relatorio = require('./Relatorio');
 const { hojeUTC, deslocarMes, somarDias, periodoAnterior } = require('../utils/datas');

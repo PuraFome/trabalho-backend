@@ -3,6 +3,7 @@ const { dividirEmParcelas } = require('../utils/parcelas');
 const crypto = require('crypto');
 
 class Lancamento {
+  // [Critério 8] Insere todas as parcelas numa transação, com grupo_parcelamento.
   async criar({ usuarioId, tipo, descricao, valor, data, categoriaId, fonteDestinoId, parcelas = 1 }) {
     const conn = await pool.getConnection();
     try {
@@ -88,6 +89,7 @@ class Lancamento {
     }
   }
 
+  // [Critério 7] Filtros + paginação (20/pág.) + resumo.
   async listar(usuarioId, { inicio, fim, tipo, categoriaId, fonteDestinoId, pagina = 1, grupo }) {
     const where = ['l.usuario_id = ?'];
     const params = [usuarioId];

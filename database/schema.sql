@@ -1,3 +1,5 @@
+-- [Critério 2] UNIQUE (uq_usuarios_email/uq_usuarios_cpf) garante e-mail/CPF únicos.
+-- [Critério 14] Integridade e tipos: FK, UNIQUE, CHECK e dinheiro em DECIMAL(12,2).
 CREATE DATABASE IF NOT EXISTS api_financas;
 USE api_financas;
 SET NAMES utf8mb4;

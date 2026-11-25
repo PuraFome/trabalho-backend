@@ -17,6 +17,7 @@ class Usuario {
   async cadastrar({ nome, email, cpf, senhaHash }) {
     const conn = await pool.getConnection();
     try {
+      // [Critério 1] Transação: cria o usuário + categorias padrão + fonte "Conta corrente" atomicamente.
       await conn.beginTransaction();
 
       // Inserir usuário

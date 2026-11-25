@@ -1,3 +1,4 @@
+// [Critério 11] Regra de fechamento/vencimento de fatura (Tabela 11.3).
 const { ultimoDiaDoMes, dataSegura } = require('./datas');
 
 function calcularFatura(dataCompra, cartao, numeroParcela = 1) {

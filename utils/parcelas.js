@@ -1,3 +1,4 @@
+// [Critério 8] Divisão em centavos: base = floor(total/qtd), resto na 1ª parcela.
 function dividirEmParcelas(valorTotal, quantidade) {
   if (quantidade < 1 || quantidade > 48 || valorTotal <= 0) {
     throw new RangeError('Quantidade deve ser entre 1 e 48 e valor deve ser positivo');

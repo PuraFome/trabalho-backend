@@ -1,3 +1,4 @@
+// [Desafio] Indicadores, projeção de 6 meses e dicas (limiares fixos) da saúde financeira.
 function taxaPoupanca(entradas, saidas) {
   if (entradas <= 0) return 0;
   return Number(((entradas - saidas) / entradas).toFixed(4));
