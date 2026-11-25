@@ -6,8 +6,12 @@ name: Deploy GitHub Pages
 # o workflow interno `pages-build-deployment` (gerado pelo GitHub) nao permite retry,
 # e o servico de Pages devolve 5xx transitorios com a mensagem
 # "Failed to create deployment (status: 500) ... Server error ... re-run the deployment
-# at a later time" (acoes/deploy-pages issues #193 e #418). Aqui o deploy tem tentativas
-# automaticas, entao uma falha transitoria se resolve sozinha.
+# at a later time" (acoes/deploy-pages issues #193 e #418). Aqui o deploy tem varias
+# tentativas com backoff, entao uma indisponibilidade breve se resolve sozinha.
+#
+# ATENCAO: isto NAO contorna uma queda sustentada do servico de Pages (verifique
+# https://www.githubstatus.com). Nesse caso, aguarde a normalizacao e re-execute o
+# workflow (Actions -> Deploy GitHub Pages -> Re-run all jobs).
 
 on:
   push:
@@ -49,7 +53,8 @@ jobs:
       pages: write
       id-token: write
     steps:
-      # Tentativas com retry para absorver erros 5xx transitorios do serviço de Pages.
+      # Ate 4 tentativas, com backoff crescente (30s / 120s / 300s), para absorver
+      # erros 5xx transitorios do serviço de Pages. So a ultima tentativa derruba o job.
       - name: Deploy para o GitHub Pages (tentativa 1)
         id: tentativa1
         continue-on-error: true
@@ -65,13 +70,23 @@ jobs:
         continue-on-error: true
         uses: actions/deploy-pages@v5
 
-      - name: Aguardar 60s antes da tentativa 3
+      - name: Aguardar 120s antes da tentativa 3
         if: steps.tentativa1.outcome == 'failure' && steps.tentativa2.outcome == 'failure'
-        run: sleep 60
+        run: sleep 120
 
       - name: Deploy para o GitHub Pages (tentativa 3)
         id: tentativa3
         if: steps.tentativa1.outcome == 'failure' && steps.tentativa2.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+
+      - name: Aguardar 300s antes da tentativa 4
+        if: steps.tentativa1.outcome == 'failure' && steps.tentativa2.outcome == 'failure' && steps.tentativa3.outcome == 'failure'
+        run: sleep 300
+
+      - name: Deploy para o GitHub Pages (tentativa 4)
+        id: tentativa4
+        if: steps.tentativa1.outcome == 'failure' && steps.tentativa2.outcome == 'failure' && steps.tentativa3.outcome == 'failure'
         uses: actions/deploy-pages@v5
 
       - name: Resolver URL publicada
@@ -81,4 +96,5 @@ jobs:
           url="${{ steps.tentativa1.outputs.page_url }}"
           if [ -z "$url" ]; then url="${{ steps.tentativa2.outputs.page_url }}"; fi
           if [ -z "$url" ]; then url="${{ steps.tentativa3.outputs.page_url }}"; fi
+          if [ -z "$url" ]; then url="${{ steps.tentativa4.outputs.page_url }}"; fi
           echo "page_url=$url" >> "$GITHUB_OUTPUT"
