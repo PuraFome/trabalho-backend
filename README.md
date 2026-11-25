@@ -12,13 +12,13 @@
 4. [Setup Local (sem Docker)](#setup-local-sem-docker)
 5. [Comandos Úteis](#comandos-úteis)
 6. [Variáveis de Ambiente (`.env`)](#variáveis-de-ambiente-env)
-6. [Credenciais de Demonstração (Seed)](#credenciais-de-demonstração-seed)
-7. [Estrutura de Pastas](#estrutura-de-pastas)
-8. [Tabela de Rotas](#tabela-de-rotas)
-9. [Regras de Negócio](#regras-de-negócio)
-10. [Desafio: Saúde Financeira](#desafio-saúde-financeira)
-11. [Checklist de Aceite (§11.12)](#checklist-de-aceite-§1112)
-12. [Roteiro de Apresentação (≤10 min)](#roteiro-de-apresentação-≤10-min)
+7. [Credenciais de Demonstração (Seed)](#credenciais-de-demonstração-seed)
+8. [Estrutura de Pastas](#estrutura-de-pastas)
+9. [Tabela de Rotas](#tabela-de-rotas)
+10. [Regras de Negócio](#regras-de-negócio)
+11. [Desafio: Saúde Financeira](#desafio-saúde-financeira)
+12. [Checklist de Aceite (§11.12)](#checklist-de-aceite-§1112)
+13. [Roteiro de Apresentação (≤10 min)](#roteiro-de-apresentação-≤10-min)
 
 ---
 
@@ -215,15 +215,15 @@ trabalho-backend/
 ├── docker-compose.yml    # db (MySQL 8.4) + api + healthchecks
 ├── docker-compose.override.yml # Dev: bind mount + hot reload
 ├── docs/                 # Site estático (GitHub Pages source)
-│   ├── index.html        # Documentação da API (visão geral, auth, rotas, exemplos, erros, CORS)
+│   ├── index.html        # Documentação da API (visão geral, auth, rotas, exemplos, importação/exportação, erros, CORS, saúde)
 │   ├── styles.css        # Reset mínimo + tipografia base (16px)
 │   ├── README.md         # Documentação do site (docs + demo)
 │   ├── .nojekyll         # Desativa Jekyll no GitHub Pages
 │   └── demo/             # Demonstração ao vivo (app financeira)
-│       ├── index.html    # Shell HTML com abas (Login, Lançamentos, Fontes/Destinos, Relatórios)
+│       ├── index.html    # Shell HTML com abas (Login, Lançamentos, Fontes/Destinos, Categorias, Relatórios, Saúde Financeira)
 │       ├── styles.css    # Estilos da aplicação
 │       ├── config.js     # Resolve a base da API (local x produção)
-│       └── app.js        # Auth, lançamentos e relatórios (scripts clássicos)
+│       └── app.js        # Auth, lançamentos, categorias, relatórios e saúde (scripts clássicos)
 ├── tools/
 │   └── serve-front.mjs   # Servidor estático Node puro (porta 4200)
 └── README.md             # Este arquivo
@@ -236,7 +236,7 @@ trabalho-backend/
 A pasta `/docs` é um site estático, zero-build e sem dependências, publicado pelo **GitHub Pages**, com duas partes:
 
 - **`docs/index.html`** — **documentação da API** (visão geral, autenticação JWT, referência de rotas, exemplos, formato de erro, CORS e credenciais de demonstração).
-- **`docs/demo/`** — **demonstração ao vivo** da aplicação financeira (login, cadastro, lançamentos, cadastro de fontes/destinos, relatórios), conectada à API publicada.
+- **`docs/demo/`** — **demonstração ao vivo** da aplicação financeira (login, cadastro, lançamentos, cadastro de fontes/destinos, categorias, relatórios, saúde financeira), conectada à API publicada.
 
 ### Servir localmente
 
@@ -251,7 +251,7 @@ O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://l
 - Documentação: **http://localhost:4200/**
 - Demonstração: **http://localhost:4200/demo/**
 
-> A API precisa estar de pé em `http://localhost:3000` (veja Setup acima). O `docs/demo/config.js` resolve a base automaticamente: em `localhost`/porta `4200` usa `http://localhost:3000`; em qualquer outro host usa `PROD_API_BASE` — ajuste essa constante para a URL do Render antes do deploy.
+> A API precisa estar de pé em `http://localhost:3000` (veja Setup acima). O `docs/demo/config.js` resolve a base automaticamente: em `localhost`/porta `4200` usa `http://localhost:3000`; em qualquer outro host usa `PROD_API_BASE` — a constante já aponta para a API publicada (`https://trabalho-backend-jrkv.onrender.com`); ajuste-a apenas se publicar a API em outro lugar.
 
 ### GitHub Pages
 
@@ -263,7 +263,7 @@ O servidor embutido (Node puro, sem dependências) publica `docs/` em **http://l
 
 ### Configuração de Produção
 
-- **`docs/demo/config.js`** — edite a constante `PROD_API_BASE` para a URL da API no Render (ex.: `https://seu-app.onrender.com`).
+- **`docs/demo/config.js`** — a constante `PROD_API_BASE` já aponta para a API publicada no Render (`https://trabalho-backend-jrkv.onrender.com`). Edite-a apenas se a API for publicada em outra URL.
 - **Backend `.env` (produção)** — `CORS_ORIGIN=https://SEU_USUARIO.github.io` (host apenas, sem path).
 
 ### Login de demonstração
@@ -293,9 +293,9 @@ Use o usuário do seed: `ana@email.com` / `Ana@1234`.
 | POST | `/lancamentos` | Sim | `{tipo,descricao,valor,data,categoriaId,fonteDestinoId,parcelas?}` | 201, 400, 404, 401 |
 | PUT | `/lancamentos/:id` | Sim | `{tipo?,descricao?,valor?,data?,categoriaId?,fonteDestinoId?}` | 200, 400, 404, 401 |
 | DELETE | `/lancamentos/:id` | Sim | `?todasParcelas=true` | 204, 400, 404, 401 |
-| GET | `/lancamentos/importar/modelo` | Sim | `?formato=csv` (padrão `.xlsx`) | 200, 401 |
+| GET | `/lancamentos/importar/modelo` | Sim | `?formato=csv` (padrão `.xlsx`) | 200, 401, 500 |
 | POST | `/lancamentos/importar` | Sim | CSV (`text/csv`) ou `.xlsx` | 201, 400, 401, 500 |
-| GET | `/lancamentos/exportar` | Sim | `?inicio&fim&tipo` (opcionais) | 200, 400, 401 |
+| GET | `/lancamentos/exportar` | Sim | `?inicio&fim&tipo` (opcionais) | 200, 400, 401, 500 |
 | GET | `/relatorios/categorias` | Sim | `inicio,fim` (obrigatórios) | 200, 400, 401 |
 | GET | `/relatorios/fontes-destinos` | Sim | `inicio,fim` (obrigatórios) | 200, 400, 401 |
 | GET | `/relatorios/faturas` | Sim | `?meses=3` (1–12) | 200, 400, 401 |
@@ -388,11 +388,13 @@ Todos os `DECIMAL`/`SUM` convertidos com `Number()` uma única vez no model. Rel
 { "erro": "Token ausente, inválido ou expirado." }
 
 // 404
-{ "erro": "Recurso não encontrado." }
+{ "erro": "Lançamento não encontrado." }
 
 // 500
 { "erro": "Erro interno do servidor." }
 ```
+
+> A mensagem de `erro` varia por recurso (a forma `{ erro, campos? }` é constante). Exemplos reais: `404` → `"Lançamento não encontrado."`, `"Categoria não encontrada."`, `"Fonte/destino não encontrado."`, `"Usuário não encontrado."` ou `"Rota não encontrada."`; `409` → `"Conflito."` (cadastro), `"Categoria já cadastrada."` ou `"Fonte/destino já cadastrado."`.
 
 ### 11. Importação de lançamentos (Excel `.xlsx` ou CSV)
 - **Modelo:** `GET /lancamentos/importar/modelo` devolve um `.xlsx` cujas colunas **Categoria** e **Fonte/Destino** têm lista suspensa (validação de dados) preenchida com as categorias/fontes do usuário, e a coluna **Data** tem **validação de data** (calendário, só aceita datas, exibida como `AAAA-MM-DD`). Colunas: `Data, Descrição, Categoria, Fonte/Destino, Parcela, Valor` (+ linha de exemplo, ignorada). `?formato=csv` baixa o modelo em CSV (UTF-8 com BOM).

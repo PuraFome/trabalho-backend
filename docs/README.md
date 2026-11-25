@@ -2,8 +2,8 @@
 
 Site estático, zero-build e sem dependências, publicado pelo GitHub Pages a partir da pasta `/docs` deste repositório. A pasta `/docs` contém **duas partes**:
 
-- **`docs/index.html`** — documentação da API (visão geral, autenticação JWT, referência de rotas, exemplos, formato de erro, CORS e credenciais de demonstração).
-- **`docs/demo/`** — a aplicação financeira completa (login, cadastro, lançamentos, cadastro de fontes/destinos, relatórios, saúde financeira) como demonstração ao vivo, conectada à API publicada.
+- **`docs/index.html`** — documentação da API (visão geral, autenticação JWT, referência de rotas, exemplos, importação/exportação, formato de erro, CORS, saúde financeira e credenciais de demonstração).
+- **`docs/demo/`** — a aplicação financeira completa (login, cadastro, lançamentos, cadastro de fontes/destinos, categorias, relatórios, saúde financeira) como demonstração ao vivo, conectada à API publicada.
 
 ## Servir localmente
 
@@ -43,15 +43,15 @@ docs/
 ├── README.md           # Este arquivo
 ├── .nojekyll           # Desativa Jekyll no GitHub Pages
 └── demo/               # Demonstração ao vivo (app financeira)
-    ├── index.html      # Shell HTML com abas (Login, Lançamentos, Fontes/Destinos, Relatórios, Saúde Financeira)
+    ├── index.html      # Shell HTML com abas (Login, Lançamentos, Fontes/Destinos, Categorias, Relatórios, Saúde Financeira)
     ├── styles.css      # Estilos da aplicação
     ├── config.js       # Resolve a base da API (local x produção)
-    └── app.js          # Auth, lançamentos e relatórios (scripts clássicos)
+    └── app.js          # Auth, lançamentos, categorias, relatórios e saúde (scripts clássicos)
 ```
 
 ## Configuração de Produção
 
-- **`docs/demo/config.js`** — edite a constante `PROD_API_BASE` para a URL da API no Render (ex.: `https://seu-app.onrender.com`).
+- **`docs/demo/config.js`** — a constante `PROD_API_BASE` já aponta para a API publicada no Render (`https://trabalho-backend-jrkv.onrender.com`). Edite-a apenas se a API for publicada em outra URL.
 - **Backend `.env` (produção)** — `CORS_ORIGIN=https://SEU_USUARIO.github.io` (host apenas, sem path).
 
 ## Login de demonstração

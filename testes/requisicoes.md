@@ -453,7 +453,7 @@ curl -s -w "\nHTTP %{http_code}" "$BASE/saude-financeira" -H "Authorization: Bea
 #     "concentracaoGastos": {
 #       "categorias": [{"nome": <string>, "total": <number>, "percentual": <number>}, ...],
 #       "totalGastos": <number>,
-#       "indiceConcentracao": <number>                  // 4 casas decimais (Herfindahl-Hirschman)
+#       "indiceConcentracao": <number>                  // 4 casas decimais (soma das 3 maiores participações)
 #     },
 #     "tendenciaGastos": {
 #       "mesAtual": "AAAA-MM",
@@ -466,7 +466,7 @@ curl -s -w "\nHTTP %{http_code}" "$BASE/saude-financeira" -H "Authorization: Bea
 #   "projecao": [                                       // 6 meses
 #     {"mes": "AAAA-MM", "entradas": <number>, "saidas": <number>, "saldoPrevisto": <number>}, ...
 #   ],
-#   "dicas": [<string>, ...]                            // array não-vazio (máx. 5 + 1 positiva)
+#   "dicas": [<string>, ...]                            // array não-vazio (máx. 8)
 # }
 
 # Asserções:

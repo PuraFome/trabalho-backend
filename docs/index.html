@@ -52,7 +52,9 @@
           <li><a href="#visao-geral">Visão geral</a></li>
           <li><a href="#autenticacao">Autenticação</a></li>
           <li><a href="#rotas">Referência de rotas</a></li>
+          <li><a href="#referencia">Referência detalhada</a></li>
           <li><a href="#exemplos">Exemplos</a></li>
+          <li><a href="#importacao">Importação</a></li>
           <li><a href="#erros">Formato de erro</a></li>
           <li><a href="#cors">CORS</a></li>
           <li><a href="#saude">Saúde financeira</a></li>
@@ -79,7 +81,23 @@
       </ul>
       <div class="card">
         <h3>Stack</h3>
-        <p>Node.js 24 · Express 4 · mysql2 · bcrypt · jsonwebtoken · express-jwt · dotenv</p>
+        <p>Node.js 20+ (imagem Docker 24) · Express 4 · mysql2 · bcrypt · jsonwebtoken · express-jwt · dotenv</p>
+      </div>
+      <div class="card">
+        <h3>Base URL</h3>
+        <ul>
+          <li>Local: <code>http://localhost:3000</code></li>
+          <li>Produção (deploy atual, Render): <code>https://trabalho-backend-jrkv.onrender.com</code></li>
+        </ul>
+        <p>Todos os caminhos da <a href="#rotas">referência de rotas</a> e da <a href="#referencia">referência detalhada</a> são relativos à Base URL.</p>
+      </div>
+      <div class="card">
+        <h3>Content types</h3>
+        <ul>
+          <li>Requisição/resposta JSON: <code>application/json</code></li>
+          <li>Importação/modelo CSV: <code>text/csv</code> (modelo com BOM UTF-8)</li>
+          <li>Importação/exportação Excel: <code>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</code></li>
+        </ul>
       </div>
       <h3>Como subir localmente</h3>
       <pre><code># 1. Banco (Docker)
@@ -143,6 +161,9 @@ curl http://localhost:3000/health
           <tr><td>POST</td><td><code>/lancamentos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{tipo,descricao,valor,data,categoriaId,fonteDestinoId,parcelas?}</code></td><td>201, 400, 404, 401</td></tr>
           <tr><td>PUT</td><td><code>/lancamentos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>{tipo?,descricao?,valor?,data?,categoriaId?,fonteDestinoId?}</code></td><td>200, 400, 404, 401</td></tr>
           <tr><td>DELETE</td><td><code>/lancamentos/:id</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?todasParcelas=true</code></td><td>204, 400, 404, 401</td></tr>
+          <tr><td>GET</td><td><code>/lancamentos/importar/modelo</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?formato=csv</code> (padrão <code>.xlsx</code>)</td><td>200, 401, 500</td></tr>
+          <tr><td>POST</td><td><code>/lancamentos/importar</code></td><td><span class="badge badge-sim">Sim</span></td><td>CSV (<code>text/csv</code>) ou <code>.xlsx</code></td><td>201, 400, 401, 500</td></tr>
+          <tr><td>GET</td><td><code>/lancamentos/exportar</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?inicio&fim&tipo</code> (opcionais)</td><td>200, 400, 401, 500</td></tr>
           <tr><td>GET</td><td><code>/relatorios/categorias</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>inicio,fim</code> (obrigatórios)</td><td>200, 400, 401</td></tr>
           <tr><td>GET</td><td><code>/relatorios/fontes-destinos</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>inicio,fim</code> (obrigatórios)</td><td>200, 400, 401</td></tr>
           <tr><td>GET</td><td><code>/relatorios/faturas</code></td><td><span class="badge badge-sim">Sim</span></td><td><code>?meses=3</code> (1–12)</td><td>200, 400, 401</td></tr>
@@ -176,13 +197,303 @@ Content-Type: application/json
 { "id": 42, "tipo": "saida", "descricao": "Supermercado", "valor": 150, "data": "2026-11-10", "categoriaId": 1, "fonteDestinoId": 3 }</code></pre>
       <h3>Erro 400 / 401 / 404</h3>
       <pre><code>// 400
-{ "erro": "Dados inválidos.", "campos": { "email": "E-mail obrigatório" } }
+{ "erro": "Dados inválidos.", "campos": { "email": "E-mail inválido." } }
 
 // 401
 { "erro": "Token ausente, inválido ou expirado." }
 
 // 404
-{ "erro": "Recurso não encontrado." }</code></pre>
+{ "erro": "Lançamento não encontrado." }</code></pre>
+    </section>
+
+    <section id="referencia">
+      <h2>Referência detalhada por recurso</h2>
+      <p>Cada endpoint abaixo traz parâmetros, exemplo de requisição e exemplo de resposta. Todos os caminhos são relativos à <a href="#visao-geral">Base URL</a>. As rotas de dados são <strong>protegidas</strong> (exigem o header <code>Authorization: Bearer &lt;token&gt;</code>), exceto <code>/auth/cadastro</code>, <code>/auth/login</code> e <code>/health</code>.</p>
+
+      <h3>Auth</h3>
+
+      <h4>POST /auth/cadastro <span class="badge badge-nao">Não protegida</span></h4>
+      <p>Cadastra um usuário. A senha exige ao menos 8 caracteres, com letra e número; o CPF pode vir com ou sem pontuação. E-mail e CPF são normalizados e únicos.</p>
+      <pre><code>POST /auth/cadastro
+Content-Type: application/json
+
+{ "nome": "Ana Souza", "email": "ana@email.com", "cpf": "529.982.247-25", "senha": "Ana@1234" }</code></pre>
+      <pre><code>// Resposta 201
+{ "id": 1, "nome": "Ana Souza", "email": "ana@email.com" }</code></pre>
+      <p>Erros: <code>400</code> <code>{ "erro": "Dados inválidos.", "campos": { ... } }</code> · <code>409</code> <code>{ "erro": "Conflito.", "campos": { "email": "E-mail já cadastrado." } }</code> (ou <code>cpf</code>) · <code>500</code>.</p>
+
+      <h4>POST /auth/login <span class="badge badge-nao">Não protegida</span></h4>
+      <p>Autentica por e-mail e senha e devolve um JWT (HS256) com validade de 1h.</p>
+      <pre><code>POST /auth/login
+Content-Type: application/json
+
+{ "email": "ana@email.com", "senha": "Ana@1234" }</code></pre>
+      <pre><code>// Resposta 200
+{ "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", "usuario": { "id": 1, "nome": "Ana Souza", "email": "ana@email.com" } }</code></pre>
+      <p>Erros: <code>401</code> <code>{ "erro": "E-mail ou senha inválidos." }</code> (mesma mensagem para e-mail inexistente e senha incorreta) · <code>500</code>.</p>
+
+      <h4>GET /auth/me <span class="badge badge-sim">Protegida</span></h4>
+      <p>Devolve os dados do usuário autenticado (nunca inclui <code>senha_hash</code>).</p>
+      <pre><code>GET /auth/me
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+{ "id": 1, "nome": "Ana Souza", "email": "ana@email.com", "cpf": "52998224725", "criado_em": "2026-11-01T12:00:00.000Z" }</code></pre>
+      <p>Erros: <code>401</code> · <code>404</code> · <code>500</code>.</p>
+
+      <h3>Categorias</h3>
+
+      <h4>GET /categorias <span class="badge badge-sim">Protegida</span></h4>
+      <p>Lista as categorias do usuário. Query opcional <code>tipo=entrada|saida</code>. <code>classificacao</code> é <code>null</code> para entradas.</p>
+      <pre><code>GET /categorias?tipo=saida
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+[ { "id": 3, "nome": "Alimentação", "tipo": "saida", "classificacao": "necessidade" } ]</code></pre>
+      <p>Erros: <code>400</code> (tipo inválido) · <code>401</code>.</p>
+
+      <h4>POST /categorias <span class="badge badge-sim">Protegida</span></h4>
+      <p>Cria uma categoria. Body <code>{nome,tipo,classificacao?}</code>; <code>classificacao</code> ∈ <code>necessidade|desejo|poupanca</code> (entradas não aceitam classificação).</p>
+      <pre><code>POST /categorias
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "nome": "Pets", "tipo": "saida", "classificacao": "desejo" }</code></pre>
+      <pre><code>// Resposta 201
+{ "id": 10, "nome": "Pets", "tipo": "saida", "classificacao": "desejo" }</code></pre>
+      <p>Erros: <code>400</code> · <code>409</code> <code>{ "erro": "Categoria já cadastrada.", "campos": { "nome": "Já existe uma categoria com este nome e tipo." } }</code> · <code>401</code>.</p>
+
+      <h4>PUT /categorias/:id <span class="badge badge-sim">Protegida</span></h4>
+      <p>Atualiza parcialmente (<code>{nome?,tipo?,classificacao?}</code>). Alterar o <code>tipo</code> de uma categoria com lançamentos vinculados retorna <code>409</code>.</p>
+      <pre><code>PUT /categorias/10
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "nome": "Pets e Vet" }</code></pre>
+      <pre><code>// Resposta 200
+{ "id": 10, "nome": "Pets e Vet", "tipo": "saida", "classificacao": "desejo" }</code></pre>
+      <p>Erros: <code>400</code> · <code>404</code> · <code>409</code> · <code>401</code>.</p>
+
+      <h4>DELETE /categorias/:id <span class="badge badge-sim">Protegida</span></h4>
+      <p>Exclui uma categoria sem lançamentos vinculados. Resposta <code>204</code> sem corpo.</p>
+      <pre><code>DELETE /categorias/10
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <p>Erros: <code>400</code> · <code>404</code> · <code>409</code> (existem lançamentos) · <code>401</code>.</p>
+
+      <h3>Fontes/Destinos</h3>
+
+      <h4>GET /fontes-destinos <span class="badge badge-sim">Protegida</span></h4>
+      <p>Lista fontes/destinos. Query opcional <code>tipo=renda|conta|cartao_credito</code>.</p>
+      <pre><code>GET /fontes-destinos?tipo=cartao_credito
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+[ { "id": 3, "nome": "Cartão Nubank", "tipo": "cartao_credito", "dia_fechamento": 3, "dia_vencimento": 10, "limite": 5000, "reserva": false } ]</code></pre>
+      <p>Erros: <code>400</code> · <code>401</code>.</p>
+
+      <h4>POST /fontes-destinos <span class="badge badge-sim">Protegida</span></h4>
+      <p>Cria uma fonte/destino. Body <code>{nome,tipo,dia_fechamento?,dia_vencimento?,limite?,reserva?}</code>. Para <code>cartao_credito</code>, <code>dia_fechamento</code>, <code>dia_vencimento</code> e <code>limite</code> são obrigatórios.</p>
+      <pre><code>POST /fontes-destinos
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "nome": "Cartão Nubank", "tipo": "cartao_credito", "dia_fechamento": 3, "dia_vencimento": 10, "limite": 5000 }</code></pre>
+      <pre><code>// Resposta 201
+{ "id": 3, "nome": "Cartão Nubank", "tipo": "cartao_credito", "dia_fechamento": 3, "dia_vencimento": 10, "limite": 5000, "reserva": false }</code></pre>
+      <p>Erros: <code>400</code> (cartão sem os 3 campos) · <code>409</code> <code>{ "erro": "Fonte/destino já cadastrado.", "campos": { "nome": "Já existe uma fonte/destino com este nome." } }</code> · <code>401</code>.</p>
+
+      <h4>PUT /fontes-destinos/:id <span class="badge badge-sim">Protegida</span></h4>
+      <p>Atualiza parcialmente. Alterar o <code>tipo</code> de uma fonte com lançamentos vinculados retorna <code>409</code>.</p>
+      <pre><code>PUT /fontes-destinos/3
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "limite": 6500 }</code></pre>
+      <pre><code>// Resposta 200
+{ "id": 3, "nome": "Cartão Nubank", "tipo": "cartao_credito", "dia_fechamento": 3, "dia_vencimento": 10, "limite": 6500, "reserva": false }</code></pre>
+      <p>Erros: <code>400</code> · <code>404</code> · <code>409</code> · <code>401</code>.</p>
+
+      <h4>DELETE /fontes-destinos/:id <span class="badge badge-sim">Protegida</span></h4>
+      <p>Exclui uma fonte/destino sem lançamentos vinculados. Resposta <code>204</code> sem corpo.</p>
+      <pre><code>DELETE /fontes-destinos/3
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <p>Erros: <code>400</code> · <code>404</code> · <code>409</code> · <code>401</code>.</p>
+
+      <h3>Lançamentos</h3>
+
+      <h4>GET /lancamentos <span class="badge badge-sim">Protegida</span></h4>
+      <p>Lista paginada (20 por página) com resumo. Query opcional <code>inicio,fim,tipo,categoriaId,fonteDestinoId,pagina</code>; sem filtro de período, usa o mês corrente.</p>
+      <pre><code>GET /lancamentos?inicio=2026-11-01&amp;fim=2026-11-30&amp;pagina=1
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+{
+  "periodo": { "inicio": "2026-11-01", "fim": "2026-11-30" },
+  "resumo": { "entradas": 5200, "saidas": 4323.33, "saldo": 876.67 },
+  "pagina": 1,
+  "totalPaginas": 3,
+  "itens": [
+    {
+      "id": 42,
+      "tipo": "saida",
+      "descricao": "Supermercado",
+      "valor": 150,
+      "data": "2026-11-10",
+      "categoria": { "id": 3, "nome": "Alimentação" },
+      "fonteDestino": { "id": 3, "nome": "Cartão Nubank", "tipo": "cartao_credito" },
+      "parcela": "1/10"
+    }
+  ]
+}</code></pre>
+      <p><code>parcela</code> é <code>null</code> quando o lançamento não é parcelado. Erros: <code>400</code> · <code>401</code>.</p>
+
+      <h4>GET /lancamentos/:id <span class="badge badge-sim">Protegida</span></h4>
+      <p>Detalha um lançamento do usuário.</p>
+      <pre><code>GET /lancamentos/42
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+{ "id": 42, "tipo": "saida", "descricao": "Supermercado", "valor": 150, "data": "2026-11-10", "categoria": { "id": 3, "nome": "Alimentação" }, "fonteDestino": { "id": 3, "nome": "Cartão Nubank", "tipo": "cartao_credito" }, "parcela": "1/10" }</code></pre>
+      <p>Erros: <code>400</code> (id inválido) · <code>404</code> · <code>401</code>.</p>
+
+      <h4>POST /lancamentos <span class="badge badge-sim">Protegida</span></h4>
+      <p>Cria um lançamento. Body <code>{tipo,descricao,valor,data,categoriaId,fonteDestinoId,parcelas?}</code>. <code>parcelas</code> vai de 1 a 48 e só é permitido em <code>saida</code> com fonte <code>cartao_credito</code>.</p>
+      <pre><code>POST /lancamentos
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "tipo": "saida", "descricao": "Notebook", "valor": 3000, "data": "2026-11-20", "categoriaId": 9, "fonteDestinoId": 3, "parcelas": 10 }</code></pre>
+      <pre><code>// Resposta 201
+{ "id": 42, "quantidade": 10, "grupo": "550e8400-e29b-41d4-a716-446655440000" }</code></pre>
+      <p><code>grupo</code> é <code>null</code> quando <code>parcelas</code>=1. Erros: <code>400</code> · <code>404</code> (categoria/fonte inexistente ou de outro usuário) · <code>401</code>.</p>
+
+      <h4>PUT /lancamentos/:id <span class="badge badge-sim">Protegida</span></h4>
+      <p>Atualiza parcialmente (<code>{tipo?,descricao?,valor?,data?,categoriaId?,fonteDestinoId?}</code>).</p>
+      <pre><code>PUT /lancamentos/42
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "descricao": "Notebook Pro", "valor": 3500 }</code></pre>
+      <pre><code>// Resposta 200
+{ "id": 42, "tipo": "saida", "descricao": "Notebook Pro", "valor": 3500, "data": "2026-11-20", "categoria": { "id": 9, "nome": "Outras saídas" }, "fonteDestino": { "id": 3, "nome": "Cartão Nubank", "tipo": "cartao_credito" }, "parcela": "1/10" }</code></pre>
+      <p>Erros: <code>400</code> · <code>404</code> · <code>401</code>.</p>
+
+      <h4>DELETE /lancamentos/:id <span class="badge badge-sim">Protegida</span></h4>
+      <p>Exclui um lançamento. Com <code>?todasParcelas=true</code>, remove todas as parcelas do mesmo grupo. Resposta <code>204</code> sem corpo.</p>
+      <pre><code>DELETE /lancamentos/42?todasParcelas=true
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <p>Erros: <code>400</code> · <code>404</code> · <code>401</code>.</p>
+
+      <h4>GET /lancamentos/importar/modelo <span class="badge badge-sim">Protegida</span></h4>
+      <p>Baixa o modelo de importação em <code>.xlsx</code> (padrão) ou CSV com <code>?formato=csv</code>. A resposta é o arquivo binário (ver <a href="#importacao">Importação e exportação</a>).</p>
+      <pre><code>GET /lancamentos/importar/modelo?formato=csv
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <p>Erros: <code>401</code> · <code>500</code>.</p>
+
+      <h4>POST /lancamentos/importar <span class="badge badge-sim">Protegida</span></h4>
+      <p>Importa em lote (CSV <code>text/csv</code> ou <code>.xlsx</code>). Valida tudo antes de gravar; qualquer erro cancela a importação.</p>
+      <pre><code>POST /lancamentos/importar
+Authorization: Bearer &lt;token&gt;
+Content-Type: text/csv
+
+Data,Descrição,Categoria,Fonte/Destino,Parcela,Valor
+2026-11-10,Supermercado,Alimentação,Conta corrente,,150.90</code></pre>
+      <pre><code>// Resposta 201
+{ "importados": 1, "lancamentos": 1, "categoriasCriadas": 0, "fontesCriadas": 0 }</code></pre>
+      <pre><code>// Resposta 400 (nenhum lançamento gravado)
+{ "erro": "Importação cancelada: 2 erro(s) encontrado(s).", "linhas": [ { "linha": 3, "coluna": "Valor", "mensagem": "Valor deve ser número maior que zero (use ponto decimal, ex.: 150.90)." } ] }</code></pre>
+      <p>Erros: <code>400</code> · <code>401</code> · <code>500</code>.</p>
+
+      <h4>GET /lancamentos/exportar <span class="badge badge-sim">Protegida</span></h4>
+      <p>Exporta todos os lançamentos em <code>.xlsx</code> (sem paginação), respeitando os filtros opcionais <code>inicio,fim,tipo,categoriaId,fonteDestinoId</code>.</p>
+      <pre><code>GET /lancamentos/exportar?inicio=2026-11-01&amp;fim=2026-11-30
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <p>Resposta: arquivo <code>.xlsx</code>. Erros: <code>400</code> · <code>401</code> · <code>500</code>.</p>
+
+      <h3>Relatórios</h3>
+
+      <h4>GET /relatorios/categorias <span class="badge badge-sim">Protegida</span></h4>
+      <p>Totais por categoria no período, com comparação ao período anterior (mês de calendário anterior). Query obrigatória <code>inicio,fim</code>.</p>
+      <pre><code>GET /relatorios/categorias?inicio=2026-10-01&amp;fim=2026-10-31
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+{
+  "periodo": { "inicio": "2026-10-01", "fim": "2026-10-31" },
+  "periodoAnterior": { "inicio": "2026-09-01", "fim": "2026-09-30" },
+  "saidas": {
+    "total": 1200,
+    "categorias": [
+      { "id": 3, "nome": "Alimentação", "total": 400, "percentual": 33.33, "anterior": 350, "variacao": 14.29 }
+    ]
+  },
+  "entradas": { "total": 5000, "categorias": [] }
+}</code></pre>
+      <p><code>variacao</code> é <code>null</code> quando não há valor no período anterior. Erros: <code>400</code> · <code>401</code>.</p>
+
+      <h4>GET /relatorios/fontes-destinos <span class="badge badge-sim">Protegida</span></h4>
+      <p>Totais por fonte/destino no período, com saldo das contas. Query obrigatória <code>inicio,fim</code>.</p>
+      <pre><code>GET /relatorios/fontes-destinos?inicio=2026-10-01&amp;fim=2026-10-31
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+{
+  "periodo": { "inicio": "2026-10-01", "fim": "2026-10-31" },
+  "entradas": [ { "id": 2, "nome": "Salário", "total": 5000 } ],
+  "saidas": [ { "id": 1, "nome": "Conta corrente", "total": 1200 } ],
+  "contas": [ { "id": 1, "nome": "Conta corrente", "entradas": 5000, "saidas": 1200, "saldo": 3800 } ]
+}</code></pre>
+      <p>Erros: <code>400</code> · <code>401</code>.</p>
+
+      <h4>GET /relatorios/faturas <span class="badge badge-sim">Protegida</span></h4>
+      <p>Previsão de faturas por cartão. Query opcional <code>?meses=3</code> (1–12).</p>
+      <pre><code>GET /relatorios/faturas?meses=3
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+{
+  "hoje": "2026-11-25",
+  "cartoes": [
+    {
+      "id": 3,
+      "nome": "Cartão Nubank",
+      "limite": 5000,
+      "limiteUtilizado": 596.68,
+      "limiteDisponivel": 4403.32,
+      "faturas": [
+        {
+          "referencia": "2026-12",
+          "fechamento": "2026-12-03",
+          "vencimento": "2026-12-10",
+          "total": 596.68,
+          "lancamentos": [ { "id": 42, "descricao": "Notebook", "parcela": "1/10", "valor": 300 } ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+      <p>Erros: <code>400</code> (<code>meses</code> fora de 1–12) · <code>401</code>.</p>
+
+      <h3>Saúde financeira</h3>
+      <p><code>GET /saude-financeira</code> (protegida) devolve indicadores, projeção de 6 meses e dicas. A descrição completa está na seção <a href="#saude">Saúde financeira</a>.</p>
+    </section>
+
+    <section id="importacao">
+      <h2>Importação e exportação</h2>
+      <p>Importação e exportação de lançamentos em lote, sem dependências externas (<code>utils/csv.js</code> e <code>utils/xlsx.js</code>). Os endpoints estão detalhados na <a href="#rotas">referência de rotas</a>.</p>
+      <table>
+        <thead><tr><th>Método</th><th>Caminho</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>GET</td>
+            <td><code>/lancamentos/importar/modelo</code></td>
+            <td>Baixa o modelo de importação. Por padrão em <code>.xlsx</code>, com as colunas <strong>Categoria</strong> e <strong>Fonte/Destino</strong> em lista suspensa e a coluna <strong>Data</strong> com validação de calendário. Com <code>?formato=csv</code>, baixa em CSV (UTF-8 com BOM).</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/lancamentos/importar</code></td>
+            <td>Recebe CSV (<code>text/csv</code>) ou <code>.xlsx</code>. Valida todas as linhas <strong>antes</strong> de gravar: se qualquer célula for inválida, nada é importado e a resposta lista cada erro com <code>linha</code>, <code>coluna</code> e <code>mensagem</code>. Categorias e fontes/destinos citados <strong>pelo nome</strong> que não existirem são criados automaticamente (retorno informa <code>categoriasCriadas</code> e <code>fontesCriadas</code>).</td>
+          </tr>
+          <tr>
+            <td>GET</td>
+            <td><code>/lancamentos/exportar</code></td>
+            <td>Baixa um <code>.xlsx</code> com todos os lançamentos do usuário (sem paginação), respeitando os filtros opcionais <code>inicio</code>, <code>fim</code>, <code>tipo</code>, <code>categoriaId</code> e <code>fonteDestinoId</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Colunas do arquivo:</strong> <code>Data, Descrição, Categoria, Fonte/Destino, Parcela, Valor</code>. O export inclui a coluna extra <code>Tipo</code>, ignorada na importação (o <code>tipo</code> é inferido da categoria). No CSV, separador vírgula e decimal com ponto (<code>150.90</code>); as colunas são reconhecidas pelo cabeçalho, então a importação aceita tanto o modelo quanto o arquivo gerado por <code>/lancamentos/exportar</code>. Parcelamento apenas para saída em cartão de crédito.</p>
     </section>
 
     <section id="erros">
@@ -193,11 +504,12 @@ Content-Type: application/json
         <tbody>
           <tr><td>400</td><td><code>{ "erro": "Dados inválidos.", "campos": { "campo": "mensagem" } }</code></td></tr>
           <tr><td>401</td><td><code>{ "erro": "Token ausente, inválido ou expirado." }</code></td></tr>
-          <tr><td>404</td><td><code>{ "erro": "Recurso não encontrado." }</code></td></tr>
+          <tr><td>404</td><td><code>{ "erro": "Lançamento não encontrado." }</code></td></tr>
           <tr><td>409</td><td><code>{ "erro": "Conflito.", "campos": { "campo": "mensagem" } }</code></td></tr>
           <tr><td>500</td><td><code>{ "erro": "Erro interno do servidor." }</code></td></tr>
         </tbody>
       </table>
+      <p><strong>Nota:</strong> a forma <code>{ erro, campos? }</code> é constante, mas a mensagem de <code>erro</code> varia conforme o recurso. Exemplos reais: <code>409</code> → <code>"Conflito."</code> (cadastro duplicado), <code>"Categoria já cadastrada."</code> (categorias) ou <code>"Fonte/destino já cadastrado."</code> (fontes/destinos); <code>404</code> → <code>"Lançamento não encontrado."</code>, <code>"Categoria não encontrada."</code>, <code>"Fonte/destino não encontrado."</code>, <code>"Usuário não encontrado."</code> ou <code>"Rota não encontrada."</code> (rota inexistente).</p>
     </section>
 
     <section id="cors">
@@ -207,7 +519,7 @@ Content-Type: application/json
         <h3>Configuração no backend (produção)</h3>
         <p>Defina a variável de ambiente <code>CORS_ORIGIN</code> no backend (Render):</p>
         <pre><code>CORS_ORIGIN=https://SEU_USUARIO.github.io</code></pre>
-        <p>Em desenvolvimento local: <code>http://localhost:4200,https://SEU_USUARIO.github.io</code></p>
+        <p>Em desenvolvimento local: <code>http://localhost:4200,null,https://SEU_USUARIO.github.io</code> (o <code>null</code> cobre a demo aberta via <code>file://</code>).</p>
       </div>
     </section>
 
@@ -248,7 +560,7 @@ Content-Type: application/json
         <li><code>indiceEndividamento > 0.15</code></li>
         <li><code>runwayMeses < 3</code></li>
         <li><code>indiceConcentracao > 0.60</code></li>
-        <li><code>variacaoPercentual ≥ +10%</code> (alta) ou <code>≤ −10%</code> (baixa)</li>
+        <li><code>tendenciaGastos.direcao === 'alta'</code> (variação ≥ +10%; a direção <code>baixa</code> <strong>não</strong> gera dica)</li>
       </ol>
 
       <p>Veja a aba "Saúde Financeira" na demonstração (<code>/demo/</code>).</p>
