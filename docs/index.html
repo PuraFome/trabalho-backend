@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Documentação da API — Finanças Pessoais</title>
-  <link rel="stylesheet" href="styles.css">
   <style>
     /* Estilos da documentação — zero dependências, sem CDN */
     :root {
@@ -37,35 +36,134 @@
     .badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
     .badge-sim { background: #fef2f2; color: #991b1b; }
     .badge-nao { background: #f0fdf4; color: #166534; }
+
+    /* Info tooltip — zero-dep, pure CSS */
+    .info-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 1.1rem; height: 1.1rem; margin-left: 0.375rem; border: 1px solid var(--cor-borda); border-radius: 50%; background: #fff; color: var(--cor-primaria); font-size: 0.75rem; font-weight: 700; line-height: 1; cursor: help; flex-shrink: 0; }
+    .info-tip:focus { outline: none; box-shadow: 0 0 0 2px var(--cor-primaria); }
+    .info-tip__pop { position: absolute; top: calc(100% + 0.375rem); left: 0; z-index: 20; max-width: 22rem; padding: 0.625rem 0.75rem; background: #1f2937; color: #e5e7eb; border-radius: 6px; font-size: 0.75rem; line-height: 1.5; white-space: normal; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(-0.25rem); transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease; pointer-events: none; }
+    .info-tip__pop::before { content: ""; position: absolute; bottom: 100%; left: 0.5rem; border: 6px solid transparent; border-bottom-color: #1f2937; }
+    .info-tip:hover .info-tip__pop, .info-tip:focus-within .info-tip__pop { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; }
+    .info-tip--right .info-tip__pop { left: auto; right: 0; }
+    .info-tip--right .info-tip__pop::before { left: auto; right: 0.5rem; }
+    .status-code { white-space: nowrap; }
+    .info-tip--sm { width: 0.95rem; height: 0.95rem; font-size: 0.65rem; margin-left: 0.2rem; vertical-align: middle; }
+    .info-tip--sm .info-tip__pop { font-size: 0.72rem; }
     .card { background: #fff; border: 1px solid var(--cor-borda); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
     .footer { border-top: 1px solid var(--cor-borda); padding: 1.5rem 0; margin-top: 2rem; color: #6b7280; font-size: 0.875rem; }
     .demo-link { display: inline-block; background: var(--cor-primaria); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 1rem; }
     .demo-link:hover { background: #1d4ed8; }
+
+    /* Try-it panel styles */
+    .tryit-auth { border-color: var(--cor-primaria); }
+    .tryit-auth .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-bottom: 0.75rem; }
+    .tryit-auth label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8125rem; color: #374151; }
+    .tryit-auth input { padding: 0.5rem 0.75rem; border: 1px solid var(--cor-borda); border-radius: 6px; font-size: 0.875rem; min-width: 180px; }
+    .tryit-auth input[type="password"] { min-width: 160px; }
+    .tryit-auth .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; font-size: 0.875rem; cursor: pointer; }
+    .tryit-auth .btn-primary { background: var(--cor-primaria); color: #fff; }
+    .tryit-auth .btn-primary:hover { background: #1d4ed8; }
+    .tryit-auth .btn-ghost { background: #f3f4f6; color: #374151; border: 1px solid var(--cor-borda); }
+    .tryit-auth .btn-ghost:hover { background: #e5e7eb; }
+    .tryit-auth .token-state { font-size: 0.8125rem; color: #6b7280; margin-top: 0.5rem; }
+    .tryit-auth .token-state code { background: #f3f4f6; padding: 0.125rem 0.375rem; border-radius: 4px; }
+    .tryit-auth .cors-note { font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; }
+
+    .tryit { margin-top: 1rem; padding: 1rem; background: #fafafa; border: 1px solid var(--cor-borda); border-radius: 8px; }
+    .tryit .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-bottom: 0.75rem; }
+    .tryit label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: #6b7280; font-weight: 500; min-width: 100px; }
+    .tryit input, .tryit textarea { padding: 0.5rem 0.75rem; border: 1px solid var(--cor-borda); border-radius: 6px; font-size: 0.8125rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #fff; }
+    .tryit input { min-width: 120px; }
+    .tryit textarea { min-width: 100%; min-height: 100px; resize: vertical; }
+    .tryit .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; font-weight: 600; font-size: 0.875rem; cursor: pointer; }
+    .tryit .btn-primary { background: var(--cor-primaria); color: #fff; }
+    .tryit .btn-primary:hover { background: #1d4ed8; }
+    .tryit .btn-ghost { background: #f3f4f6; color: #374151; border: 1px solid var(--cor-borda); }
+    .tryit .btn-ghost:hover { background: #e5e7eb; }
+    .tryit .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .tryit-resp { margin-top: 1rem; padding: 1rem; background: #1f2937; color: #e5e7eb; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8125rem; overflow-x: auto; }
+    .tryit-resp[hidden] { display: none; }
+    .status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .status-ok { background: #064e3b; color: #6ee7b7; }
+    .status-err { background: #7f1d1d; color: #fca5a5; }
+    .tryit-resp pre { margin: 0; white-space: pre-wrap; word-break: break-word; }
+    .tryit-resp code { background: transparent; padding: 0; color: inherit; }
+    .fields { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.8125rem; }
+    .fields th, .fields td { border: 1px solid #374151; padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+    .fields th { background: #374151; font-weight: 600; }
+    .fields tr:nth-child(even) { background: #374151; }
+    .fields .key { font-weight: 600; color: #a5b4fc; white-space: nowrap; }
+    .fields .val { color: #e5e7eb; }
+    .tryit-resp .binary-note { color: #9ca3af; font-size: 0.75rem; margin-top: 0.5rem; }
+    .tryit-resp .download-link { display: inline-block; margin-top: 0.5rem; color: var(--cor-primaria); text-decoration: underline; }
+    .tryit-resp .error-msg { color: #fca5a5; }
+    .status-pending { background: #374151; color: #e5e7eb; }
+    .tryit .tryit-title { font-weight: 700; font-size: 0.9rem; margin: 0 0 0.75rem; color: var(--cor-texto); }
+    .tryit label.field-body { min-width: 100%; }
+    .tryit label.field-label { min-width: 100%; }
+    .tryit-curl { position: relative; margin: 0 0 0.75rem; }
+    .tryit-curl pre { margin: 0; background: #0f172a; color: #e2e8f0; padding: 0.75rem 3rem 0.75rem 0.75rem; border-radius: 6px; font-size: 0.75rem; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+    .tryit-curl .copy-btn { position: absolute; top: 0.45rem; right: 0.45rem; font-size: 0.7rem; padding: 0.2rem 0.55rem; border: 1px solid #334155; background: #1e293b; color: #cbd5e1; border-radius: 4px; cursor: pointer; }
+    .tryit-curl .copy-btn:hover { background: #334155; }
+    .tryit-curl .copy-btn.copied { background: #166534; border-color: #166534; color: #dcfce7; }
+    .tryit-curl .curl-note { font-size: 0.72rem; color: #6b7280; margin-top: 0.35rem; }
+    .tryit-status { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin: 0 0 0.75rem; }
+    .tryit-status .tryit-status-label { font-size: 0.72rem; color: #6b7280; font-weight: 600; margin-right: 0.15rem; }
+    .tryit-status label { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.55rem; border: 1px solid var(--cor-borda); border-radius: 9999px; background: #fff; color: #374151; cursor: pointer; }
+    .tryit-status label:has(input:checked) { border-color: var(--cor-primaria); background: #eff6ff; color: var(--cor-primaria); }
+    .tryit-status input { accent-color: var(--cor-primaria); margin: 0; }
+    .tryit-status-note { font-size: 0.72rem; color: #b45309; margin: -0.35rem 0 0.75rem; }
+    .tryit-status-note[hidden] { display: none; }
+
+    /* Menu lateral + busca */
+    .nav-toggle { display: none; }
+    .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--cor-borda); padding: 1.25rem 1rem 2.5rem; box-sizing: border-box; z-index: 30; }
+    .sidebar .logo { display: block; font-size: 1.05rem; font-weight: 700; color: var(--cor-primaria); text-decoration: none; margin-bottom: 1rem; }
+    .sidebar-search { position: relative; margin-bottom: 1rem; }
+    .sidebar-search input { width: 100%; box-sizing: border-box; padding: 0.5rem 2rem 0.5rem 0.75rem; border: 1px solid var(--cor-borda); border-radius: 6px; font-size: 0.85rem; }
+    .sidebar-search input:focus { outline: none; border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+    .sidebar-search button { position: absolute; top: 50%; right: 0.35rem; transform: translateY(-50%); border: none; background: transparent; color: #6b7280; font-size: 1.15rem; line-height: 1; cursor: pointer; }
+    .toc ul { list-style: none; display: block; gap: 0; margin: 0; padding: 0; }
+    .toc li { margin: 0; }
+    .toc a { display: block; padding: 0.3rem 0.5rem; border-radius: 5px; color: #374151; text-decoration: none; font-weight: 500; font-size: 0.85rem; line-height: 1.35; }
+    .toc a:hover { background: #f3f4f6; color: var(--cor-primaria); }
+    .toc a.active { background: #eff6ff; color: var(--cor-primaria); font-weight: 600; }
+    .toc .toc-h3 > a { padding-left: 1.1rem; font-size: 0.82rem; color: #4b5563; font-weight: 400; }
+    .toc .toc-h4 > a { padding-left: 1.9rem; font-size: 0.78rem; color: #6b7280; font-weight: 400; }
+    .toc-empty { font-size: 0.82rem; color: #9ca3af; padding: 0.25rem 0.5rem; }
+    .toc .toc-h2 > ul { display: none; }
+    .toc .toc-h2.open > ul { display: block; }
+    .toc .toc-h2 > a { position: relative; padding-right: 1.4rem; }
+    .toc .toc-h2 > a::after { content: "▸"; position: absolute; right: 0.45rem; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #9ca3af; transition: transform 0.15s ease; }
+    .toc .toc-h2.open > a::after { transform: translateY(-50%) rotate(90deg); }
+    .backdrop { display: none; }
+    .content { margin-left: 280px; }
+    @media (max-width: 900px) {
+      .nav-toggle { display: inline-flex; align-items: center; gap: 0.35rem; position: fixed; top: 0.6rem; left: 0.6rem; z-index: 40; padding: 0.45rem 0.75rem; border: 1px solid var(--cor-borda); background: #fff; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+      .sidebar { width: 84vw; max-width: 320px; transform: translateX(-100%); transition: transform 0.2s ease; box-shadow: 0 0 25px rgba(0,0,0,0.15); }
+      .sidebar.open { transform: translateX(0); }
+      .content { margin-left: 0; }
+      .backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 25; }
+      .backdrop[hidden] { display: none; }
+      main.container { padding-top: 3.75rem; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <a href="./" class="logo">API Finanças — Documentação</a>
-      <nav>
-        <ul>
-          <li><a href="#visao-geral">Visão geral</a></li>
-          <li><a href="#autenticacao">Autenticação</a></li>
-          <li><a href="#rotas">Referência de rotas</a></li>
-          <li><a href="#referencia">Referência detalhada</a></li>
-          <li><a href="#exemplos">Exemplos</a></li>
-          <li><a href="#importacao">Importação</a></li>
-          <li><a href="#erros">Formato de erro</a></li>
-          <li><a href="#cors">CORS</a></li>
-          <li><a href="#saude">Saúde financeira</a></li>
-          <li><a href="#checklist">Checklist</a></li>
-          <li><a href="#avaliacao">Avaliação</a></li>
-          <li><a href="#demo">Demonstração</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+  <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar"><span aria-hidden="true">☰</span> Menu</button>
 
+  <aside class="sidebar" id="sidebar">
+    <a href="./" class="logo">API Finanças — Documentação</a>
+    <div class="sidebar-search">
+      <input id="nav-search" type="search" placeholder="Pesquisar na documentação…" aria-label="Pesquisar na documentação" autocomplete="off">
+      <button id="nav-search-clear" type="button" aria-label="Limpar busca" hidden>×</button>
+    </div>
+    <nav class="toc" id="toc" aria-label="Índice da documentação"></nav>
+    <p class="toc-empty" id="toc-empty" hidden>Nenhum resultado.</p>
+  </aside>
+  <div class="backdrop" id="backdrop" hidden></div>
+
+  <div class="content">
   <main class="container">
     <section id="visao-geral">
       <h1>Documentação da API</h1>
@@ -186,15 +284,15 @@ Content-Type: application/json
       <pre><code>GET /categorias?tipo=saida
 Authorization: Bearer &lt;token&gt;</code></pre>
       <pre><code>// Resposta 200
-[ { "id": 1, "nome": "Alimentação", "tipo": "saida", "classificacao": "necessidade" } ]</code></pre>
+[ { "id": 3, "nome": "Alimentação", "tipo": "saida", "classificacao": "necessidade" } ]</code></pre>
       <h3>Criação de lançamento</h3>
       <pre><code>POST /lancamentos
 Authorization: Bearer &lt;token&gt;
 Content-Type: application/json
 
-{ "tipo": "saida", "descricao": "Supermercado", "valor": 150.00, "data": "2026-11-10", "categoriaId": 1, "fonteDestinoId": 3 }</code></pre>
+{ "tipo": "saida", "descricao": "Supermercado", "valor": 150.00, "data": "2026-11-10", "categoriaId": 3, "fonteDestinoId": 3 }</code></pre>
       <pre><code>// Resposta 201
-{ "id": 42, "tipo": "saida", "descricao": "Supermercado", "valor": 150, "data": "2026-11-10", "categoriaId": 1, "fonteDestinoId": 3 }</code></pre>
+{ "id": 42, "quantidade": 1, "grupo": null }</code></pre>
       <h3>Erro 400 / 401 / 404</h3>
       <pre><code>// 400
 { "erro": "Dados inválidos.", "campos": { "email": "E-mail inválido." } }
@@ -208,7 +306,21 @@ Content-Type: application/json
 
     <section id="referencia">
       <h2>Referência detalhada por recurso</h2>
-      <p>Cada endpoint abaixo traz parâmetros, exemplo de requisição e exemplo de resposta. Todos os caminhos são relativos à <a href="#visao-geral">Base URL</a>. As rotas de dados são <strong>protegidas</strong> (exigem o header <code>Authorization: Bearer &lt;token&gt;</code>), exceto <code>/auth/cadastro</code>, <code>/auth/login</code> e <code>/health</code>.</p>
+      <p>Cada endpoint abaixo traz parâmetros, exemplo de requisição, exemplo de resposta e um <strong>painel interativo</strong>: um exemplo de <code>curl</code> para testar no terminal (com botão <em>Copiar</em>), campos pré-preenchidos e o botão <em>Testar</em>, que envia a requisição e exibe abaixo o status e a resposta em JSON — também formatada em campos quando for um objeto. Todos os caminhos são relativos à <a href="#visao-geral">Base URL</a>. Nos exemplos de terminal, <code>$BASE</code> é a Base URL (ex.: <code>http://localhost:3000</code>) e <code>$TOKEN</code> é o JWT retornado por <code>POST /auth/login</code>. As rotas de dados são <strong>protegidas</strong> (exigem o header <code>Authorization: Bearer &lt;token&gt;</code>), exceto <code>/auth/cadastro</code>, <code>/auth/login</code> e <code>/health</code>.</p>
+
+      <div class="card tryit-auth">
+        <h3 style="margin-top:0;">Experimentar as rotas</h3>
+        <p>Obtenha um token JWT para testar as rotas protegidas. As requisições partem deste navegador para <code class="base-url">…</code>.</p>
+        <div class="row">
+          <label>E-mail <input id="tryit-email" type="email" value="ana@email.com"></label>
+          <label>Senha <input id="tryit-senha" type="password" value="Ana@1234"></label>
+          <button id="tryit-login" type="button" class="btn btn-primary">Obter token</button>
+          <button id="tryit-clear-token" type="button" class="btn btn-ghost">Limpar token</button>
+        </div>
+        <p class="token-state">Token atual: <span id="tryit-token-state">—</span></p>
+        <div id="tryit-login-resp" aria-live="polite"></div>
+        <p class="cors-note">As rotas protegidas usam este token. A API precisa permitir a origem desta página em <code>CORS_ORIGIN</code>.</p>
+      </div>
 
       <h3>Auth</h3>
 
@@ -467,7 +579,28 @@ Authorization: Bearer &lt;token&gt;</code></pre>
       <p>Erros: <code>400</code> (<code>meses</code> fora de 1–12) · <code>401</code>.</p>
 
       <h3>Saúde financeira</h3>
-      <p><code>GET /saude-financeira</code> (protegida) devolve indicadores, projeção de 6 meses e dicas. A descrição completa está na seção <a href="#saude">Saúde financeira</a>.</p>
+
+      <h4>GET /saude-financeira <span class="badge badge-sim">Protegida</span></h4>
+      <p>Devolve indicadores, projeção de 6 meses e dicas. A descrição completa está na seção <a href="#saude">Saúde financeira</a>.</p>
+      <pre><code>GET /saude-financeira
+Authorization: Bearer &lt;token&gt;</code></pre>
+      <pre><code>// Resposta 200
+{
+  "aviso": "Informações educativas; não constituem recomendação financeira profissional.",
+  "indicadores": { "taxaPoupanca": 0.1686, "comprometimentoCartoes": 0.2558, "...": "..." },
+  "projecao": [ { "mes": "2026-12", "entradas": 9100, "saidas": 8200, "saldoPrevisto": 900 } ],
+  "dicas": [ "..." ]
+}</code></pre>
+      <p>Erros: <code>401</code>.</p>
+
+      <h3>Infraestrutura</h3>
+
+      <h4>GET /health <span class="badge badge-nao">Não protegida</span></h4>
+      <p>Verificação de saúde da API e do banco. Não exige token.</p>
+      <pre><code>GET /health</code></pre>
+      <pre><code>// Resposta 200
+{ "status": "ok", "banco": "ok" }</code></pre>
+      <p>Erros: <code>503</code> quando o banco não responde.</p>
     </section>
 
     <section id="importacao">
@@ -893,5 +1026,984 @@ curl -s http://localhost:3000/health
       <p>API Finanças — Documentação publicada via GitHub Pages (pasta <code>/docs</code>). Zero-build, sem dependências.</p>
     </div>
   </footer>
+
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var LOCAL_API_BASE = 'http://localhost:3000';
+    var PROD_API_BASE = 'https://trabalho-backend-jrkv.onrender.com';
+    var TOKEN_KEY = 'docs_api_token';
+    var CSV_SAMPLE = 'Data,Descrição,Categoria,Fonte/Destino,Parcela,Valor\n2026-11-10,Supermercado,Alimentação,Conta corrente,,150.90';
+
+    function resolverApiBase(hostname, port, protocol) {
+      if (protocol === 'file:' || !hostname) return LOCAL_API_BASE;
+      var host = hostname.toLowerCase();
+      var isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.localhost');
+      var isLocalDomain = host.endsWith('.local');
+      var isDockerInternal = host === 'host.docker.internal';
+      var isPrivateIPv4 = host.startsWith('192.168.') || host.startsWith('10.') || (host.startsWith('172.') && (function () {
+        var parts = host.split('.');
+        if (parts.length < 2) return false;
+        var second = parseInt(parts[1], 10);
+        return second >= 16 && second <= 31;
+      })());
+      var isDevPort = port === '4200';
+      if (isLocalhost || isLocalDomain || isDockerInternal || isPrivateIPv4 || isDevPort) return LOCAL_API_BASE;
+      return PROD_API_BASE;
+    }
+
+    var API_BASE = resolverApiBase(location.hostname, location.port, location.protocol);
+
+    var ENDPOINTS = {
+      'GET /health': { auth: false },
+      'GET /saude-financeira': { auth: true },
+      'POST /auth/cadastro': { auth: false, body: { nome: 'Ana Souza', email: 'ana@email.com', cpf: '529.982.247-25', senha: 'Ana@1234' } },
+      'POST /auth/login': { auth: false, body: { email: 'ana@email.com', senha: 'Ana@1234' } },
+      'GET /auth/me': { auth: true },
+      'GET /categorias': { auth: true, query: { tipo: 'saida' } },
+      'POST /categorias': { auth: true, body: { nome: 'Pets', tipo: 'saida', classificacao: 'desejo' } },
+      'PUT /categorias/:id': { auth: true, pathParams: { id: '10' }, body: { nome: 'Pets e Vet' } },
+      'DELETE /categorias/:id': { auth: true, pathParams: { id: '10' } },
+      'GET /fontes-destinos': { auth: true, query: { tipo: 'cartao_credito' } },
+      'POST /fontes-destinos': { auth: true, body: { nome: 'Cartão Nubank', tipo: 'cartao_credito', dia_fechamento: 3, dia_vencimento: 10, limite: 5000 } },
+      'PUT /fontes-destinos/:id': { auth: true, pathParams: { id: '3' }, body: { limite: 6500 } },
+      'DELETE /fontes-destinos/:id': { auth: true, pathParams: { id: '3' } },
+      'GET /lancamentos': { auth: true, query: { inicio: '2026-11-01', fim: '2026-11-30', pagina: '1' } },
+      'GET /lancamentos/:id': { auth: true, pathParams: { id: '42' } },
+      'POST /lancamentos': { auth: true, body: { tipo: 'saida', descricao: 'Notebook', valor: 3000, data: '2026-11-20', categoriaId: 9, fonteDestinoId: 3, parcelas: 10 } },
+      'PUT /lancamentos/:id': { auth: true, pathParams: { id: '42' }, body: { descricao: 'Notebook Pro', valor: 3500 } },
+      'DELETE /lancamentos/:id': { auth: true, pathParams: { id: '42' }, query: { todasParcelas: 'true' } },
+      'GET /lancamentos/importar/modelo': { auth: true, query: { formato: 'csv' }, binary: true, outputName: 'modelo.csv' },
+      'POST /lancamentos/importar': { auth: true, raw: 'csv' },
+      'GET /lancamentos/exportar': { auth: true, query: { inicio: '2026-11-01', fim: '2026-11-30' }, binary: true, outputName: 'lancamentos.xlsx' },
+      'GET /relatorios/categorias': { auth: true, query: { inicio: '2026-10-01', fim: '2026-10-31' } },
+      'GET /relatorios/fontes-destinos': { auth: true, query: { inicio: '2026-10-01', fim: '2026-10-31' } },
+      'GET /relatorios/faturas': { auth: true, query: { meses: '3' } }
+    };
+
+    function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+    function setToken(t) { try { if (t) { localStorage.setItem(TOKEN_KEY, t); } else { localStorage.removeItem(TOKEN_KEY); } } catch (e) {} updateTokenState(); }
+
+    function updateTokenState() {
+      var el = document.getElementById('tryit-token-state');
+      if (!el) return;
+      var t = getToken();
+      el.textContent = t ? '••••' + t.slice(-6) : '—';
+    }
+
+    function el(tag, cls, text) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text !== undefined) n.textContent = text;
+      return n;
+    }
+
+    function statusClass(code) { return code >= 200 && code < 300 ? 'status-ok' : 'status-err'; }
+
+    function fmt(v) {
+      if (v === null) return 'null';
+      if (typeof v === 'object') { var s = JSON.stringify(v); return s.length > 200 ? s.slice(0, 197) + '…' : s; }
+      return String(v);
+    }
+
+    function renderFields(container, data) {
+      if (Array.isArray(data)) {
+        if (data.length === 0) { container.appendChild(el('p', null, 'Lista vazia.')); return; }
+        if (typeof data[0] === 'object' && data[0] !== null) {
+          var cols = [];
+          data.forEach(function (row) { Object.keys(row).forEach(function (k) { if (cols.indexOf(k) === -1) cols.push(k); }); });
+          var table = el('table', 'fields');
+          var thead = el('thead'); var htr = el('tr');
+          cols.forEach(function (c) { htr.appendChild(el('th', null, c)); });
+          thead.appendChild(htr); table.appendChild(thead);
+          var tbody = el('tbody');
+          data.slice(0, 10).forEach(function (row) {
+            var tr = el('tr');
+            cols.forEach(function (c) { tr.appendChild(el('td', null, fmt(row[c]))); });
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody); container.appendChild(table);
+          if (data.length > 10) container.appendChild(el('p', null, '… e mais ' + (data.length - 10) + ' item(ns).'));
+        } else {
+          var ul = el('ul');
+          data.slice(0, 20).forEach(function (v) { ul.appendChild(el('li', null, fmt(v))); });
+          container.appendChild(ul);
+        }
+        return;
+      }
+      if (data && typeof data === 'object') {
+        var t = el('table', 'fields'); var tb = el('tbody');
+        Object.keys(data).forEach(function (k) {
+          var tr = el('tr');
+          tr.appendChild(el('th', 'key', k));
+          tr.appendChild(el('td', 'val', fmt(data[k])));
+          tb.appendChild(tr);
+        });
+        t.appendChild(tb); container.appendChild(t);
+        return;
+      }
+      container.appendChild(el('p', null, fmt(data)));
+    }
+
+    function compactJson(text) {
+      try { return JSON.stringify(JSON.parse(text)); } catch (e) { return String(text).replace(/\s*\n\s*/g, ' '); }
+    }
+
+    function fallbackCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    function buildCurl(method, path, meta, values, scenario) {
+      var finalPath = path;
+      Object.keys(values.path).forEach(function (k) {
+        finalPath = finalPath.replace(':' + k, encodeURIComponent(values.path[k]));
+      });
+      var qs = [];
+      Object.keys(values.query).forEach(function (k) {
+        var v = String(values.query[k]).trim();
+        if (v !== '') qs.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+      });
+      var url = '$BASE' + finalPath + (qs.length ? '?' + qs.join('&') : '');
+      var authMode = scenario ? scenario.auth : null;
+      function authLine() {
+        if (authMode === 'none') return null;
+        if (authMode === 'invalid') return '  -H "Authorization: Bearer token-invalido"';
+        if (authMode === 'fixed') return '  -H "Authorization: Bearer ' + ((scenario && scenario.token) || '') + '"';
+        return meta.auth ? '  -H "Authorization: Bearer $TOKEN"' : null;
+      }
+
+      if (meta.binary) {
+        var out = meta.outputName || 'saida.bin';
+        var lines = ['curl -s -o ' + out + ' -w "HTTP %{http_code}\\n" \\', '  "' + url + '"'];
+        var al = authLine(); if (al) lines.push(al);
+        return lines.join('\n');
+      }
+
+      var parts = ['curl -s -w "\\nHTTP %{http_code}" -X ' + method, '  "' + url + '"'];
+      var al2 = authLine(); if (al2) parts.push(al2);
+      if (values.body) {
+        var ct = meta.raw === 'csv' ? 'text/csv' : 'application/json';
+        parts.push('  -H "Content-Type: ' + ct + '"');
+        if (meta.raw === 'csv') {
+          parts.push('  --data-binary @lancamentos.csv');
+        } else {
+          parts.push("  -d '" + compactJson(values.body).replace(/'/g, "'\\''") + "'");
+        }
+      }
+      return parts.join(' \\\n');
+    }
+
+    function buildPanel(method, path, meta) {
+      var panel = el('div', 'tryit');
+      panel.appendChild(el('p', 'tryit-title', 'Experimentar esta rota'));
+
+      var inputs = { path: {}, query: {}, body: null };
+      if (meta.pathParams || meta.query) {
+        var row = el('div', 'row');
+        if (meta.pathParams) Object.keys(meta.pathParams).forEach(function (k) {
+          var lab = el('label', null, ':' + k);
+          var inp = el('input'); inp.type = 'text'; inp.value = String(meta.pathParams[k]); inp.dataset.role = 'path'; inp.dataset.key = k;
+          lab.appendChild(inp); row.appendChild(lab); inputs.path[k] = inp;
+        });
+        if (meta.query) Object.keys(meta.query).forEach(function (k) {
+          var lab = el('label', null, k);
+          var inp = el('input'); inp.type = 'text'; inp.value = String(meta.query[k]); inp.dataset.role = 'query'; inp.dataset.key = k;
+          lab.appendChild(inp); row.appendChild(lab); inputs.query[k] = inp;
+        });
+        panel.appendChild(row);
+      }
+      if (meta.body) {
+        var labB = el('label', 'field-body', 'Corpo (JSON)');
+        var ta = el('textarea'); ta.dataset.role = 'body'; ta.value = JSON.stringify(meta.body, null, 2);
+        labB.appendChild(ta); panel.appendChild(labB); inputs.body = ta;
+      } else if (meta.raw === 'csv') {
+        var labC = el('label', 'field-body', 'Corpo (CSV)');
+        var tc = el('textarea'); tc.dataset.role = 'body'; tc.value = CSV_SAMPLE;
+        labC.appendChild(tc); panel.appendChild(labC); inputs.body = tc;
+      }
+
+      var statusKey = method + ' ' + path;
+      var statusMap = RESPOSTAS[statusKey] || null;
+      var state = { scenario: null };
+      var noteEl = null;
+      var radios = {};
+
+      function resetInputs() {
+        Object.keys(inputs.path).forEach(function (k) { inputs.path[k].value = String(meta.pathParams[k]); });
+        Object.keys(inputs.query).forEach(function (k) { inputs.query[k].value = String(meta.query[k]); });
+        if (inputs.body) inputs.body.value = meta.raw === 'csv' ? CSV_SAMPLE : JSON.stringify(meta.body, null, 2);
+      }
+      function readValues() {
+        var v = { path: {}, query: {}, body: null };
+        Object.keys(inputs.path).forEach(function (k) { v.path[k] = inputs.path[k].value; });
+        Object.keys(inputs.query).forEach(function (k) { v.query[k] = inputs.query[k].value; });
+        if (inputs.body) v.body = inputs.body.value;
+        return v;
+      }
+      function refreshCurl() { curlCode.textContent = buildCurl(method, path, meta, readValues(), state.scenario); }
+      function applyScenario(code) {
+        resetInputs();
+        var cen = (CENARIOS[statusKey] || {})[code] || {};
+        var hasOverride = cen.body !== undefined || !!cen.query || !!cen.pathParams || !!cen.auth;
+        if (cen.pathParams) Object.keys(cen.pathParams).forEach(function (k) { if (inputs.path[k]) inputs.path[k].value = String(cen.pathParams[k]); });
+        if (cen.query) Object.keys(cen.query).forEach(function (k) { if (inputs.query[k]) inputs.query[k].value = String(cen.query[k]); });
+        if (cen.body !== undefined && inputs.body) inputs.body.value = meta.raw === 'csv' ? cen.body : JSON.stringify(cen.body, null, 2);
+        state.scenario = hasOverride ? cen : null;
+        if (noteEl) { noteEl.textContent = cen.nota || ''; noteEl.hidden = !cen.nota; }
+        refreshCurl();
+      }
+
+      var curlWrap = el('div', 'tryit-curl');
+      var curlPre = el('pre');
+      var curlCode = el('code');
+      curlPre.appendChild(curlCode);
+      var copyBtn = el('button', 'copy-btn', 'Copiar'); copyBtn.type = 'button';
+      curlWrap.appendChild(curlPre);
+      curlWrap.appendChild(copyBtn);
+      panel.appendChild(curlWrap);
+      if (meta.raw === 'csv') {
+        curlWrap.appendChild(el('p', 'curl-note', 'Salve o conteúdo do campo acima em lancamentos.csv para usar o exemplo no terminal.'));
+      }
+
+      if (statusMap) {
+        var codes = Object.keys(statusMap).filter(function (c) { return c !== '500' && c !== '503'; }).sort(function (a, b) { return Number(a) - Number(b); });
+        var statusControl = el('div', 'tryit-status');
+        statusControl.appendChild(el('span', 'tryit-status-label', 'Status a testar:'));
+        var groupName = 'status-' + statusKey.replace(/[^a-zA-Z0-9]/g, '-');
+        codes.forEach(function (code) {
+          var lab = el('label');
+          var radio = el('input'); radio.type = 'radio'; radio.name = groupName; radio.value = code;
+          radio.addEventListener('change', function () { if (radio.checked) applyScenario(code); });
+          radios[code] = radio;
+          lab.appendChild(radio);
+          lab.appendChild(document.createTextNode(code));
+          statusControl.appendChild(lab);
+        });
+        panel.appendChild(statusControl);
+        noteEl = el('p', 'tryit-status-note'); noteEl.hidden = true;
+        panel.appendChild(noteEl);
+        var defaultCode = codes.filter(function (c) { return c.charAt(0) === '2'; })[0] || codes[0];
+        if (radios[defaultCode]) radios[defaultCode].checked = true;
+        applyScenario(defaultCode);
+      } else {
+        refreshCurl();
+      }
+
+      function criarRegistro(btn) {
+        var spec = CRIAR[statusKey];
+        if (!spec) return;
+        var token = getToken();
+        if (!token) {
+          resp.hidden = false; resp.textContent = '';
+          resp.appendChild(el('span', 'status status-err', 'sem token'));
+          resp.appendChild(el('p', 'error-msg', 'Obtenha um token no painel "Experimentar as rotas" acima para criar o registro.'));
+          return;
+        }
+        var body = {};
+        Object.keys(spec.body).forEach(function (k) { body[k] = spec.body[k]; });
+        if (body.nome !== undefined) body.nome = 'Registro ' + Date.now();
+        if (body.descricao !== undefined) body.descricao = 'Lançamento ' + Date.now();
+        if (body.data !== undefined) body.data = new Date().toISOString().slice(0, 10);
+        btn.disabled = true;
+        fetch(API_BASE + spec.path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify(body)
+        }).then(function (r) { return r.json().then(function (j) { return { r: r, j: j }; }); })
+          .then(function (res) {
+            resp.hidden = false; resp.textContent = '';
+            resp.appendChild(el('span', 'status ' + statusClass(res.r.status), res.r.status + ' ' + (res.r.statusText || '')));
+            if (res.r.ok && res.j && res.j.id !== undefined) {
+              if (inputs.path.id) inputs.path.id.value = String(res.j.id);
+              refreshCurl();
+              resp.appendChild(el('p', null, 'Registro #' + res.j.id + ' criado. Agora clique em "Testar" para excluir (status 204).'));
+            } else {
+              resp.appendChild(el('p', 'error-msg', (res.j && res.j.erro) || 'Falha ao criar o registro.'));
+            }
+          })
+          .catch(function () {
+            resp.hidden = false; resp.textContent = '';
+            resp.appendChild(el('span', 'status status-err', 'falha'));
+          })
+          .then(function () { btn.disabled = false; });
+      }
+
+      function dadosAleatorios() {
+        var gen = ALEATORIO[statusKey];
+        if (!gen || !inputs.body) return;
+        if (radios['201']) { radios['201'].checked = true; }
+        applyScenario('201');
+        var val = gen();
+        inputs.body.value = meta.raw === 'csv' ? val : JSON.stringify(val, null, 2);
+        refreshCurl();
+      }
+
+      var actions = el('div', 'row');
+      var send = el('button', 'btn btn-primary', 'Testar'); send.type = 'button';
+      var clear = el('button', 'btn btn-ghost', 'Limpar'); clear.type = 'button';
+      if (ALEATORIO[statusKey]) {
+        var rndBtn = el('button', 'btn btn-ghost', 'Dados aleatórios'); rndBtn.type = 'button';
+        rndBtn.addEventListener('click', dadosAleatorios);
+        actions.appendChild(rndBtn);
+      }
+      if (method === 'DELETE' && CRIAR[statusKey]) {
+        var create = el('button', 'btn btn-ghost', 'Criar registro'); create.type = 'button';
+        create.addEventListener('click', function () { criarRegistro(create); });
+        actions.appendChild(create);
+      }
+      actions.appendChild(send); actions.appendChild(clear);
+      panel.appendChild(actions);
+
+      var resp = el('div', 'tryit-resp'); resp.hidden = true; resp.setAttribute('aria-live', 'polite');
+      panel.appendChild(resp);
+
+      copyBtn.addEventListener('click', function () {
+        var text = curlCode.textContent;
+        var done = function () {
+          copyBtn.textContent = 'Copiado';
+          copyBtn.classList.add('copied');
+          setTimeout(function () { copyBtn.textContent = 'Copiar'; copyBtn.classList.remove('copied'); }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+        } else { fallbackCopy(text); done(); }
+      });
+
+      clear.addEventListener('click', function () { resp.hidden = true; resp.textContent = ''; });
+      send.addEventListener('click', function () { sendRequest(method, path, meta, inputs, resp, send, state); });
+
+      Object.keys(inputs.path).forEach(function (k) { inputs.path[k].addEventListener('input', refreshCurl); });
+      Object.keys(inputs.query).forEach(function (k) { inputs.query[k].addEventListener('input', refreshCurl); });
+      if (inputs.body) inputs.body.addEventListener('input', refreshCurl);
+
+      return panel;
+    }
+
+    function sendRequest(method, path, meta, inputs, resp, btn, state) {
+      resp.hidden = false;
+      resp.textContent = '';
+      resp.appendChild(el('span', 'status status-pending', 'enviando…'));
+
+      var finalPath = path;
+      Object.keys(inputs.path).forEach(function (k) {
+        finalPath = finalPath.replace(':' + k, encodeURIComponent(inputs.path[k].value.trim()));
+      });
+      var qs = [];
+      Object.keys(inputs.query).forEach(function (k) {
+        var v = inputs.query[k].value.trim();
+        if (v !== '') qs.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+      });
+      var url = API_BASE + finalPath + (qs.length ? '?' + qs.join('&') : '');
+
+      var headers = { Accept: 'application/json' };
+      if (inputs.body) headers['Content-Type'] = meta.raw === 'csv' ? 'text/csv' : 'application/json';
+      var authMode = state && state.scenario ? state.scenario.auth : null;
+      if (meta.auth && authMode !== 'invalid' && authMode !== 'none' && authMode !== 'fixed') {
+        var token = getToken();
+        if (!token) {
+          resp.textContent = '';
+          resp.appendChild(el('span', 'status status-err', 'sem token'));
+          resp.appendChild(el('p', 'error-msg', 'Obtenha um token no painel "Experimentar as rotas" acima para testar rotas protegidas.'));
+          return;
+        }
+        headers.Authorization = 'Bearer ' + token;
+      } else if (authMode === 'invalid') {
+        headers.Authorization = 'Bearer token-invalido';
+      } else if (authMode === 'fixed') {
+        headers.Authorization = 'Bearer ' + ((state && state.scenario && state.scenario.token) || '');
+      }
+
+      btn.disabled = true;
+      var opts = { method: method, headers: headers };
+      if (inputs.body) opts.body = inputs.body.value;
+
+      btn.disabled = true;
+      var opts = { method: method, headers: headers };
+      if (inputs.body) opts.body = inputs.body.value;
+
+      fetch(url, opts).then(function (res) {
+        resp.textContent = '';
+        resp.appendChild(el('span', 'status ' + statusClass(res.status), res.status + ' ' + (res.statusText || '')));
+        if (meta.binary) {
+          if (!res.ok) {
+            return res.text().then(function (t) { var pre = el('pre'); pre.appendChild(el('code', null, t)); resp.appendChild(pre); });
+          }
+          return res.blob().then(function (blob) {
+            var a = el('a', 'download-link', 'Baixar arquivo');
+            a.href = URL.createObjectURL(blob);
+            a.download = filenameFrom(res);
+            resp.appendChild(a);
+            resp.appendChild(el('p', 'binary-note', 'Resposta binária (' + (res.headers.get('Content-Type') || 'arquivo') + ').'));
+          });
+        }
+        return res.text().then(function (text) {
+          var data = null, parsed = false;
+          try { data = JSON.parse(text); parsed = true; } catch (e) {}
+          if (parsed) {
+            var raw = el('pre'); raw.appendChild(el('code', null, JSON.stringify(data, null, 2))); resp.appendChild(raw);
+            var fields = el('div'); renderFields(fields, data);
+            if (fields.childNodes.length) { resp.appendChild(el('p', 'binary-note', 'Campos:')); resp.appendChild(fields); }
+          } else {
+            var pre = el('pre'); pre.appendChild(el('code', null, text)); resp.appendChild(pre);
+          }
+        });
+      }).catch(function () {
+        resp.textContent = '';
+        resp.appendChild(el('span', 'status status-err', 'falha'));
+        resp.appendChild(el('p', 'error-msg', 'Falha na requisição. Verifique se a API está de pé e se o CORS_ORIGIN permite a origem ' + location.origin + '.'));
+      }).then(function () { btn.disabled = false; });
+    }
+
+    function filenameFrom(res) {
+      var cd = res.headers.get('Content-Disposition') || '';
+      var m = cd.match(/filename="?([^"]+)"?/);
+      return m ? m[1] : 'download';
+    }
+
+    function login() {
+      var respEl = document.getElementById('tryit-login-resp');
+      respEl.textContent = '';
+      respEl.appendChild(el('span', 'status status-pending', 'entrando…'));
+      fetch(API_BASE + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email: document.getElementById('tryit-email').value, senha: document.getElementById('tryit-senha').value })
+      }).then(function (res) {
+        return res.json().then(function (j) { return { res: res, j: j }; });
+      }).then(function (r) {
+        respEl.textContent = '';
+        respEl.appendChild(el('span', 'status ' + statusClass(r.res.status), r.res.status + ' ' + (r.res.statusText || '')));
+        if (r.res.ok && r.j.token) {
+          setToken(r.j.token);
+          respEl.appendChild(el('p', null, 'Token obtido para ' + (r.j.usuario ? r.j.usuario.email : 'usuário') + '.'));
+        } else {
+          respEl.appendChild(el('p', 'error-msg', r.j.erro || 'Falha no login.'));
+        }
+      }).catch(function () {
+        respEl.textContent = '';
+        respEl.appendChild(el('span', 'status status-err', 'falha'));
+      });
+    }
+
+    var RESPOSTAS = {
+      'GET /health': {
+        '200': 'Sucesso. Resposta: { "status": "ok", "banco": "ok" } (API e banco respondendo).',
+        '503': 'Serviço indisponível. Resposta: { "status": "degraded", "banco": "erro" } (banco fora do ar).'
+      },
+      'POST /auth/cadastro': {
+        '201': 'Usuário criado. Resposta: { "id": 1, "nome": "Ana", "email": "ana@email.com" } (cria também 9 categorias padrão e a fonte "Conta corrente").',
+        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { "nome"|"email"|"cpf"|"senha": "mensagem" } }.',
+        '409': 'Conflito de unicidade. Resposta: { "erro": "Conflito.", "campos": { "email"|"cpf": "já cadastrado." } }.',
+        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+      },
+      'POST /auth/login': {
+        '200': 'Login OK. Resposta: { "token": "<JWT HS256, expira em 1h>", "usuario": { "id", "nome", "email" } }.',
+        '401': 'Credenciais inválidas. Resposta: { "erro": "E-mail ou senha inválidos." }.',
+        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+      },
+      'GET /auth/me': {
+        '200': 'Usuário autenticado. Resposta: { "id", "nome", "email", "cpf", "criado_em" }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
+        '404': 'Usuário não encontrado. Resposta: { "erro": "Usuário não encontrado." }.'
+      },
+      'GET /categorias': {
+        '200': 'Lista de categorias. Resposta: [ { "id", "nome", "tipo", "classificacao" } ] (ordenadas por nome).',
+        '400': 'Query inválida. Resposta: { "erro": "Dados inválidos.", "campos": { "tipo": "Tipo deve ser entrada ou saida." } }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'POST /categorias': {
+        '201': 'Categoria criada. Resposta: { "id", "nome", "tipo", "classificacao" }.',
+        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { "nome"|"tipo"|"classificacao": "mensagem" } }.',
+        '409': 'Nome duplicado. Resposta: { "erro": "Categoria já cadastrada.", "campos": { "nome": "Já existe uma categoria com este nome e tipo." } }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'PUT /categorias/:id': {
+        '200': 'Categoria atualizada. Resposta: { "id", "nome", "tipo", "classificacao" }.',
+        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } } (id inválido, campos inválidos ou nenhum campo para atualizar).',
+        '404': 'Não encontrada (ou de outro usuário). Resposta: { "erro": "Categoria não encontrada." }.',
+        '409': 'Conflito. Resposta: { "erro": "Categoria já cadastrada.", ... } ou { "erro": "Não é possível alterar o tipo: existem lançamentos vinculados a esta categoria." }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'DELETE /categorias/:id': {
+        '204': 'Excluída. Sem corpo na resposta.',
+        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
+        '404': 'Não encontrada. Resposta: { "erro": "Categoria não encontrada." }.',
+        '409': 'Tem lançamentos. Resposta: { "erro": "Não é possível excluir: existem lançamentos vinculados a esta categoria." }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'GET /fontes-destinos': {
+        '200': 'Lista de fontes/destinos. Resposta: [ { "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" } ].',
+        '400': 'Query inválida. Resposta: { "erro": "Dados inválidos.", "campos": { "tipo": "Tipo deve ser renda, conta ou cartao_credito." } }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'POST /fontes-destinos': {
+        '201': 'Criada. Resposta: { "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" }.',
+        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } } (cartão exige dia_fechamento, dia_vencimento e limite).',
+        '409': 'Nome duplicado. Resposta: { "erro": "Fonte/destino já cadastrado.", "campos": { "nome": "Já existe uma fonte/destino com este nome." } }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'PUT /fontes-destinos/:id': {
+        '200': 'Atualizada. Resposta: { "id", "nome", "tipo", "dia_fechamento", "dia_vencimento", "limite", "reserva" }.',
+        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
+        '404': 'Não encontrada. Resposta: { "erro": "Fonte/destino não encontrado." }.',
+        '409': 'Conflito. Resposta: { "erro": "Fonte/destino já cadastrado.", ... } ou { "erro": "Não é possível alterar o tipo: existem lançamentos vinculados a esta fonte/destino." }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'DELETE /fontes-destinos/:id': {
+        '204': 'Excluída. Sem corpo na resposta.',
+        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
+        '404': 'Não encontrada. Resposta: { "erro": "Fonte/destino não encontrado." }.',
+        '409': 'Tem lançamentos. Resposta: { "erro": "Não é possível excluir: existem lançamentos vinculados a esta fonte/destino." }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'GET /lancamentos': {
+        '200': 'Página de lançamentos. Resposta: { "periodo": { "inicio", "fim" }, "resumo": { "entradas", "saidas", "saldo" }, "pagina", "totalPaginas", "itens": [ { "id", "tipo", "descricao", "valor", "data", "categoria": { "id", "nome" }, "fonteDestino": { "id", "nome", "tipo" }, "parcela" } ] } (20 por página).',
+        '400': 'Filtros inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'GET /lancamentos/:id': {
+        '200': 'Lançamento. Resposta: { "id", "tipo", "descricao", "valor", "data", "categoria": { "id", "nome" }, "fonteDestino": { "id", "nome", "tipo" }, "parcela" }.',
+        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
+        '404': 'Não encontrado (ou de outro usuário). Resposta: { "erro": "Lançamento não encontrado." }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'POST /lancamentos': {
+        '201': 'Criado. Resposta: { "id": <id da 1ª parcela>, "quantidade": <nº de parcelas>, "grupo": "<UUID>" | null }.',
+        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } } (parcelamento só para saída em cartão de crédito).',
+        '404': 'Categoria/fonte inexistente. Resposta: { "erro": "Categoria não encontrada." } ou { "erro": "Fonte/destino não encontrado." } ou { "erro": "Categoria ou fonte/destino não encontrado." }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'PUT /lancamentos/:id': {
+        '200': 'Atualizado. Resposta: lançamento atualizado (mesma forma do GET /lancamentos/:id).',
+        '400': 'Dados inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
+        '404': 'Não encontrado. Resposta: { "erro": "Lançamento não encontrado." } (ou "Categoria não encontrada." / "Fonte/destino não encontrado.").',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'DELETE /lancamentos/:id': {
+        '204': 'Excluído. Sem corpo na resposta.',
+        '400': 'ID inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "id": "ID inválido." } }.',
+        '404': 'Não encontrado. Resposta: { "erro": "Lançamento não encontrado." }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'GET /lancamentos/importar/modelo': {
+        '200': 'Arquivo modelo. Resposta binária: .xlsx (padrão) ou CSV com BOM (?formato=csv), com Content-Disposition: attachment.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
+        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+      },
+      'POST /lancamentos/importar': {
+        '201': 'Importado. Resposta: { "importados": n, "lancamentos": n, "categoriasCriadas": n, "fontesCriadas": n }.',
+        '400': 'Arquivo/linhas inválidas. Resposta: { "erro": "Importação cancelada: N erro(s) encontrado(s).", "linhas": [ { "linha", "coluna", "mensagem" } ] } (ou "Arquivo vazio." / "Formato não suportado." / "Não foi possível ler o arquivo." / "Nenhum lançamento para importar.").',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
+        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+      },
+      'GET /lancamentos/exportar': {
+        '200': 'Arquivo .xlsx com todos os lançamentos (sem paginação). Resposta binária, Content-Disposition: attachment.',
+        '400': 'Filtros inválidos. Resposta: { "erro": "Dados inválidos.", "campos": { ... } }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.',
+        '500': 'Erro interno. Resposta: { "erro": "Erro interno do servidor." }.'
+      },
+      'GET /relatorios/categorias': {
+        '200': 'Relatório. Resposta: { "periodo": { "inicio", "fim" }, "periodoAnterior": { "inicio", "fim" }, "saidas": { "total", "categorias": [ { "id", "nome", "total", "percentual", "anterior", "variacao" } ] }, "entradas": { ... } }.',
+        '400': 'Datas inválidas. Resposta: { "erro": "Dados inválidos.", "campos": { "inicio"|"fim": "Obrigatório." | "Data inválida." } } (ou inicio > fim).',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'GET /relatorios/fontes-destinos': {
+        '200': 'Relatório. Resposta: { "periodo": { "inicio", "fim" }, "entradas": [ { "id", "nome", "total" } ], "saidas": [ ... ], "contas": [ { "id", "nome", "entradas", "saidas", "saldo" } ] }.',
+        '400': 'Datas inválidas. Resposta: { "erro": "Dados inválidos.", "campos": { "inicio"|"fim": "Obrigatório." | "Data inválida." } } (ou inicio > fim).',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'GET /relatorios/faturas': {
+        '200': 'Relatório. Resposta: { "hoje": "AAAA-MM-DD", "cartoes": [ { "id", "nome", "limite", "limiteUtilizado", "limiteDisponivel", "faturas": [ { "referencia", "fechamento", "vencimento", "total", "lancamentos": [ { "id", "descricao", "parcela", "valor" } ] } ] } ] }.',
+        '400': 'meses inválido. Resposta: { "erro": "Dados inválidos.", "campos": { "meses": "Deve ser inteiro entre 1 e 12." } }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      },
+      'GET /saude-financeira': {
+        '200': 'Análise. Resposta: { "aviso", "indicadores": { ...11 indicadores... }, "projecao": [ ...6 meses... ], "dicas": [ "..." ] }.',
+        '401': 'Token ausente, inválido ou expirado. Resposta: { "erro": "Token ausente, inválido ou expirado." }.'
+      }
+    };
+
+    var CENARIOS = {
+      'GET /health': {
+        '200': {},
+        '503': { nota: 'Depende do banco estar fora do ar — não é possível forçar pelo cliente.' }
+      },
+      'POST /auth/cadastro': {
+        '201': { body: { nome: 'Ana Souza', email: 'ana@email.com', cpf: '529.982.247-25', senha: 'Ana@1234' }, nota: 'Para obter 201 use e-mail e CPF novos — ou clique em "Dados aleatórios". Os dados do seed já existem e retornam 409.' },
+        '400': { body: { nome: '', email: 'invalido', cpf: '1', senha: '123' } },
+        '409': { body: { nome: 'Ana Souza', email: 'ana@email.com', cpf: '529.982.247-25', senha: 'Ana@1234' }, nota: 'Requer e-mail ou CPF já cadastrado (os do seed).' },
+        '500': { nota: 'Erro interno do servidor — não é possível forçar pelo cliente.' }
+      },
+      'POST /auth/login': {
+        '200': { body: { email: 'ana@email.com', senha: 'Ana@1234' } },
+        '401': { body: { email: 'ana@email.com', senha: 'senha-errada' }, nota: 'Credenciais inválidas de propósito.' },
+        '500': { nota: 'Erro interno do servidor — não é possível forçar pelo cliente.' }
+      },
+      'GET /auth/me': {
+        '200': {},
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' },
+        '404': { auth: 'fixed', token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjE0NzQ4MzY0Nywibm9tZSI6IkZhbnRhc21hIiwiZW1haWwiOiJmYW50YXNtYUBleGVtcGxvLmNvbSIsImlhdCI6MTc5NTYzNDIzOCwiZXhwIjoyMTEwOTk0MjM4fQ.MZfvPx-e4EA7SqndbLsUOKxhtu5jeV1qPP46VQFPuQ0', nota: 'Forçado com um token fixo (JWT válido assinado com o JWT_SECRET) de um usuário inexistente (id 2147483647) — por isso o 404.' }
+      },
+      'GET /categorias': {
+        '200': { query: { tipo: 'saida' } },
+        '400': { query: { tipo: 'xyz' } },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'POST /categorias': {
+        '201': { body: { nome: 'Pets', tipo: 'saida', classificacao: 'desejo' }, nota: 'Para obter 201 use um nome novo nesse tipo — ou clique em "Dados aleatórios". Um nome já existente retorna 409.' },
+        '400': { body: { nome: '', tipo: 'xpto' } },
+        '409': { body: { nome: 'Salário', tipo: 'entrada' }, nota: 'Requer nome+tipo já existente (categoria do seed).' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'PUT /categorias/:id': {
+        '200': { pathParams: { id: '3' }, body: { nome: 'Alimentação em casa' }, nota: 'Requer um id de categoria existente (seed da Ana: 1–9).' },
+        '400': { pathParams: { id: '0' }, body: { nome: 'Pets e Vet' } },
+        '404': { pathParams: { id: '999999' }, body: { nome: 'Pets e Vet' }, nota: 'Id inexistente (ou de outro usuário).' },
+        '409': { pathParams: { id: '3' }, body: { nome: 'Moradia' }, nota: 'Requer id existente e um nome já usado nesse tipo (Moradia) — ou categoria com lançamentos.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'DELETE /categorias/:id': {
+        '204': { nota: 'Clique em "Criar registro" (à esquerda de Testar) para gerar uma categoria sem lançamentos — o id é preenchido e o DELETE responde 204.' },
+        '400': { pathParams: { id: '0' } },
+        '404': { pathParams: { id: '999999' }, nota: 'Id inexistente.' },
+        '409': { pathParams: { id: '3' }, nota: 'Requer id existente com lançamentos vinculados (Alimentação, id 3).' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'GET /fontes-destinos': {
+        '200': { query: { tipo: 'cartao_credito' } },
+        '400': { query: { tipo: 'xpto' } },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'POST /fontes-destinos': {
+        '201': { body: { nome: 'Cartão Nubank', tipo: 'cartao_credito', dia_fechamento: 3, dia_vencimento: 10, limite: 5000 }, nota: 'Para obter 201 use um nome novo e os dados do cartão (dia_fechamento, dia_vencimento, limite) — ou clique em "Dados aleatórios".' },
+        '400': { body: { nome: 'Cartão sem dados', tipo: 'cartao_credito' } },
+        '409': { body: { nome: 'Conta corrente', tipo: 'conta' }, nota: 'Requer nome já existente (fonte do seed).' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'PUT /fontes-destinos/:id': {
+        '200': { pathParams: { id: '3' }, body: { limite: 6500 } },
+        '400': { pathParams: { id: '0' }, body: { limite: 6500 } },
+        '404': { pathParams: { id: '999999' }, body: { limite: 6500 }, nota: 'Id inexistente.' },
+        '409': { pathParams: { id: '3' }, body: { nome: 'Conta corrente' }, nota: 'Nome já existente ou tipo com lançamentos.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'DELETE /fontes-destinos/:id': {
+        '204': { pathParams: { id: '3' }, nota: 'Requer id existente e sem lançamentos.' },
+        '400': { pathParams: { id: '0' } },
+        '404': { pathParams: { id: '999999' }, nota: 'Id inexistente.' },
+        '409': { pathParams: { id: '3' }, nota: 'Requer fonte com lançamentos vinculados.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'GET /lancamentos': {
+        '200': { query: { inicio: '2026-11-01', fim: '2026-11-30', pagina: '1' } },
+        '400': { query: { inicio: '2026-11-01', fim: '2026-11-30', pagina: '0' } },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'GET /lancamentos/:id': {
+        '200': { pathParams: { id: '42' } },
+        '400': { pathParams: { id: '0' } },
+        '404': { pathParams: { id: '999999' }, nota: 'Id inexistente.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'POST /lancamentos': {
+        '201': { body: { tipo: 'saida', descricao: 'Notebook', valor: 3000, data: '2026-11-20', categoriaId: 9, fonteDestinoId: 3, parcelas: 10 }, nota: 'Para obter 201 use ids de categoria e fonte existentes na sua conta — ou clique em "Dados aleatórios".' },
+        '400': { body: { tipo: 'saida', descricao: '', valor: -5, data: '20/11/2026', categoriaId: 9, fonteDestinoId: 3 } },
+        '404': { body: { tipo: 'saida', descricao: 'Teste', valor: 10, data: '2026-11-20', categoriaId: 999999, fonteDestinoId: 999999 }, nota: 'Categoria/fonte inexistentes.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'PUT /lancamentos/:id': {
+        '200': { pathParams: { id: '42' }, body: { descricao: 'Notebook Pro', valor: 3500 } },
+        '400': { pathParams: { id: '0' }, body: { descricao: 'Notebook Pro', valor: 3500 } },
+        '404': { pathParams: { id: '999999' }, body: { descricao: 'Notebook Pro', valor: 3500 }, nota: 'Id inexistente.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'DELETE /lancamentos/:id': {
+        '204': { pathParams: { id: '42' }, query: { todasParcelas: 'true' }, nota: 'Requer id existente.' },
+        '400': { pathParams: { id: '0' }, query: { todasParcelas: 'true' } },
+        '404': { pathParams: { id: '999999' }, query: { todasParcelas: 'true' }, nota: 'Id inexistente.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'GET /lancamentos/importar/modelo': {
+        '200': { query: { formato: 'csv' } },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' },
+        '500': { nota: 'Erro interno — não é possível forçar pelo cliente.' }
+      },
+      'POST /lancamentos/importar': {
+        '201': { body: 'Data,Descrição,Categoria,Fonte/Destino,Parcela,Valor\n2026-11-10,Supermercado,Alimentação,Conta corrente,,150.90', nota: 'Usa categorias/fonte do seed; nomes novos são criados automaticamente.' },
+        '400': { body: 'Data,Descrição,Categoria,Fonte/Destino,Parcela,Valor\n2026-13-99,,CategoriaX,FonteX,,abc', nota: 'Data e valor inválidos de propósito.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' },
+        '500': { nota: 'Erro interno — não é possível forçar pelo cliente.' }
+      },
+      'GET /lancamentos/exportar': {
+        '200': { query: { inicio: '2026-11-01', fim: '2026-11-30' } },
+        '400': { query: { inicio: '2026-11-31', fim: '2026-11-01' } },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' },
+        '500': { nota: 'Erro interno — não é possível forçar pelo cliente.' }
+      },
+      'GET /relatorios/categorias': {
+        '200': { query: { inicio: '2026-10-01', fim: '2026-10-31' } },
+        '400': { query: { inicio: '', fim: '' }, nota: 'inicio/fim obrigatórios.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'GET /relatorios/fontes-destinos': {
+        '200': { query: { inicio: '2026-10-01', fim: '2026-10-31' } },
+        '400': { query: { inicio: '', fim: '' }, nota: 'inicio/fim obrigatórios.' },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'GET /relatorios/faturas': {
+        '200': { query: { meses: '3' } },
+        '400': { query: { meses: '13' } },
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      },
+      'GET /saude-financeira': {
+        '200': {},
+        '401': { auth: 'invalid', nota: 'Enviado com token inválido.' }
+      }
+    };
+
+    var CRIAR = {
+      'DELETE /categorias/:id': { path: '/categorias', body: { nome: '', tipo: 'saida', classificacao: 'desejo' } },
+      'DELETE /fontes-destinos/:id': { path: '/fontes-destinos', body: { nome: '', tipo: 'conta' } },
+      'DELETE /lancamentos/:id': { path: '/lancamentos', body: { tipo: 'saida', descricao: '', valor: 10, data: '', categoriaId: 3, fonteDestinoId: 1, parcelas: 1 } }
+    };
+
+    function rndInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function rndNome(prefixo) { return prefixo + ' ' + Date.now().toString().slice(-6) + rndInt(10, 99); }
+    function cpfAleatorio() {
+      var n = [];
+      for (var i = 0; i < 9; i++) n.push(rndInt(0, 9));
+      function dv(base) { var s = 0; for (var i = 0; i < base.length; i++) s += base[i] * (base.length + 1 - i); var r = s % 11; return r < 2 ? 0 : 11 - r; }
+      n.push(dv(n)); n.push(dv(n));
+      return n.join('');
+    }
+    function hojeISO() { return new Date().toISOString().slice(0, 10); }
+
+    var ALEATORIO = {
+      'POST /auth/cadastro': function () {
+        return { nome: rndNome('Usuário'), email: 'teste' + Date.now() + rndInt(10, 99) + '@exemplo.com', cpf: cpfAleatorio(), senha: 'Senha' + rndInt(100000, 999999) + 'a' };
+      },
+      'POST /categorias': function () {
+        return { nome: rndNome('Categoria'), tipo: 'saida', classificacao: 'desejo' };
+      },
+      'POST /fontes-destinos': function () {
+        return { nome: rndNome('Cartão'), tipo: 'cartao_credito', dia_fechamento: rndInt(1, 28), dia_vencimento: rndInt(1, 28), limite: rndInt(1000, 10000) };
+      },
+      'POST /lancamentos': function () {
+        return { tipo: 'saida', descricao: rndNome('Lançamento'), valor: rndInt(10, 500), data: hojeISO(), categoriaId: 3, fonteDestinoId: 1, parcelas: 1 };
+      },
+      'POST /lancamentos/importar': function () {
+        return 'Data,Descrição,Categoria,Fonte/Destino,Parcela,Valor\n' + hojeISO() + ',' + rndNome('Item') + ',' + rndNome('Cat') + ',' + rndNome('Fonte') + ',,10.00';
+      }
+    };
+
+    function enhanceStatusTooltips() {
+      var tabelas = document.querySelectorAll('#autenticacao table, #rotas table');
+      Array.prototype.forEach.call(tabelas, function (tabela) {
+        var ths = tabela.querySelectorAll('thead th');
+        var colStatus = -1;
+        Array.prototype.forEach.call(ths, function (th, i) {
+          if (/^Status/i.test(th.textContent.trim())) colStatus = i;
+        });
+        if (colStatus < 0) return;
+        Array.prototype.forEach.call(tabela.querySelectorAll('tbody tr'), function (tr) {
+          var tds = tr.children;
+          if (tds.length <= colStatus || tds.length < 2) return;
+          var chave = tds[0].textContent.trim() + ' ' + tds[1].textContent.trim();
+          var celula = tds[colStatus];
+          var codigos = celula.textContent.trim().split(/\s*,\s*/).filter(Boolean);
+          celula.textContent = '';
+          codigos.forEach(function (codigo, i) {
+            if (i > 0) celula.appendChild(document.createTextNode(', '));
+            var span = el('span', 'status-code', codigo);
+            var porRota = RESPOSTAS[chave];
+            var texto = porRota && porRota[codigo] ? ('Status ' + codigo + ' — ' + porRota[codigo]) : null;
+            if (texto) {
+              var tip = el('span', 'info-tip info-tip--right info-tip--sm');
+              tip.setAttribute('tabindex', '0');
+              tip.setAttribute('aria-label', texto);
+              var pop = el('span', 'info-tip__pop');
+              pop.setAttribute('role', 'tooltip');
+              pop.textContent = texto;
+              tip.appendChild(pop);
+              tip.appendChild(document.createTextNode('?'));
+              span.appendChild(tip);
+            }
+            celula.appendChild(span);
+          });
+        });
+      });
+    }
+
+    function slugify(s) {
+      return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    function headingLabel(h) {
+      if (h.tagName === 'H4') {
+        var m = h.textContent.trim().match(/^(GET|POST|PUT|DELETE)\s+(\S+)/);
+        if (m) return m[1] + ' ' + m[2];
+      }
+      var clone = h.cloneNode(true);
+      var badge = clone.querySelector('.badge');
+      if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
+      return clone.textContent.trim();
+    }
+    function escTxt(s) {
+      return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+    }
+    function buildToc() {
+      var toc = document.getElementById('toc');
+      var main = document.querySelector('main');
+      if (!toc || !main) return [];
+      var used = {};
+      function ensureId(h) {
+        if (!h.id) {
+          var base = slugify(headingLabel(h)) || 'sec';
+          var id = base, i = 2;
+          while (used[id] || document.getElementById(id)) { id = base + '-' + i; i++; }
+          h.id = id;
+        }
+        used[h.id] = true;
+        return h.id;
+      }
+      var html = '<ul>';
+      Array.prototype.forEach.call(main.querySelectorAll('section[id]'), function (sec) {
+        var h2 = sec.querySelector('h2');
+        if (!h2) return;
+        html += '<li class="toc-h2"><a href="#' + sec.id + '" data-target="' + sec.id + '">' + escTxt(headingLabel(h2)) + '</a>';
+        var subs = sec.querySelectorAll('h3, h4');
+        if (subs.length) {
+          html += '<ul>';
+          Array.prototype.forEach.call(subs, function (h) {
+            var id = ensureId(h);
+            html += '<li class="toc-' + h.tagName.toLowerCase() + '"><a href="#' + id + '" data-target="' + id + '">' + escTxt(headingLabel(h)) + '</a></li>';
+          });
+          html += '</ul>';
+        }
+        html += '</li>';
+      });
+      html += '</ul>';
+      toc.innerHTML = html;
+      return Array.prototype.slice.call(toc.querySelectorAll('a'));
+    }
+    function initToc() {
+      var toc = document.getElementById('toc');
+      if (!toc) return;
+      var input = document.getElementById('nav-search');
+      var clear = document.getElementById('nav-search-clear');
+      var empty = document.getElementById('toc-empty');
+      var topLis = Array.prototype.slice.call(toc.querySelectorAll(':scope > ul > li'));
+      var links = Array.prototype.slice.call(toc.querySelectorAll('a'));
+      function targetOf(a) { return document.getElementById(a.getAttribute('data-target')); }
+      function openOnly(li) { topLis.forEach(function (x) { x.classList.toggle('open', x === li); }); }
+      function norm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+      function sectionTop(li) { var t = targetOf(li.querySelector(':scope > a')); return t ? t.offsetTop : Infinity; }
+      function onScroll() {
+        var y = window.scrollY + 90;
+        var currentLi = topLis[0];
+        topLis.forEach(function (li) { if (sectionTop(li) <= y) currentLi = li; });
+        var searching = input && input.value.trim() !== '';
+        if (!searching && currentLi) openOnly(currentLi);
+        var activeId = currentLi ? currentLi.querySelector(':scope > a').getAttribute('data-target') : '';
+        if (currentLi) {
+          Array.prototype.forEach.call(currentLi.querySelectorAll('a'), function (a) {
+            var t = targetOf(a);
+            if (t && t.offsetTop <= y) activeId = a.getAttribute('data-target');
+          });
+        }
+        links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-target') === activeId); });
+      }
+      function runSearch() {
+        var q = norm(input.value.trim());
+        if (clear) clear.hidden = input.value.length === 0;
+        if (!q) {
+          topLis.forEach(function (li) {
+            li.hidden = false;
+            Array.prototype.forEach.call(li.querySelectorAll(':scope > ul > li'), function (sub) { sub.hidden = false; });
+          });
+          if (empty) empty.hidden = true;
+          onScroll();
+          return;
+        }
+        var visible = 0;
+        topLis.forEach(function (li) {
+          var sectionMatch = norm(li.querySelector(':scope > a').textContent).indexOf(q) !== -1;
+          var subVisible = 0;
+          Array.prototype.forEach.call(li.querySelectorAll(':scope > ul > li'), function (sub) {
+            var m = sectionMatch || norm(sub.textContent).indexOf(q) !== -1;
+            sub.hidden = !m;
+            if (m) subVisible++;
+          });
+          var show = sectionMatch || subVisible > 0;
+          li.hidden = !show;
+          li.classList.toggle('open', show);
+          if (show) visible++;
+        });
+        if (empty) empty.hidden = visible !== 0;
+      }
+      if (input) {
+        input.addEventListener('input', runSearch);
+        if (clear) clear.addEventListener('click', function () { input.value = ''; input.focus(); runSearch(); });
+        input.addEventListener('keydown', function (e) { if (e.key === 'Escape') { input.value = ''; runSearch(); } });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      onScroll();
+    }
+    function initSidebarToggle() {
+      var btn = document.getElementById('nav-toggle');
+      var sidebar = document.getElementById('sidebar');
+      var backdrop = document.getElementById('backdrop');
+      if (!btn || !sidebar) return;
+      function setOpen(open) {
+        sidebar.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (backdrop) backdrop.hidden = !open;
+      }
+      btn.addEventListener('click', function () { setOpen(!sidebar.classList.contains('open')); });
+      if (backdrop) backdrop.addEventListener('click', function () { setOpen(false); });
+      sidebar.addEventListener('click', function (e) { if (e.target && e.target.tagName === 'A') setOpen(false); });
+    }
+    function initSidebar() {
+      buildToc();
+      initToc();
+      initSidebarToggle();
+    }
+
+    function init() {
+      Array.prototype.forEach.call(document.querySelectorAll('.base-url'), function (n) { n.textContent = API_BASE; });
+
+      var loginBtn = document.getElementById('tryit-login');
+      if (loginBtn) { updateTokenState(); loginBtn.addEventListener('click', login); }
+      var clearBtn = document.getElementById('tryit-clear-token');
+      if (clearBtn) clearBtn.addEventListener('click', function () { setToken(''); });
+
+      Array.prototype.forEach.call(document.querySelectorAll('#referencia h4'), function (h4) {
+        var m = h4.textContent.trim().match(/^(GET|POST|PUT|DELETE)\s+(\S+)/);
+        if (!m) return;
+        var meta = ENDPOINTS[m[1] + ' ' + m[2]];
+        if (!meta) return;
+        var panel = buildPanel(m[1], m[2], meta);
+        var node = h4.nextElementSibling, last = h4;
+        while (node && node.tagName !== 'H4' && node.tagName !== 'H3') { last = node; node = node.nextElementSibling; }
+        if (last.parentNode) last.parentNode.insertBefore(panel, last.nextSibling);
+      });
+      enhanceStatusTooltips();
+      initSidebar();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+  })();
+  </script>
 </body>
 </html>

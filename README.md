@@ -215,8 +215,7 @@ trabalho-backend/
 ├── docker-compose.yml    # db (MySQL 8.4) + api + healthchecks
 ├── docker-compose.override.yml # Dev: bind mount + hot reload
 ├── docs/                 # Site estático (GitHub Pages source)
-│   ├── index.html        # Documentação da API (visão geral, auth, rotas, exemplos, importação/exportação, erros, CORS, saúde)
-│   ├── styles.css        # Reset mínimo + tipografia base (16px)
+│   ├── index.html        # Documentação da API (visão geral, auth, rotas, exemplos, importação/exportação, erros, CORS, saúde, painéis interativos)
 │   ├── README.md         # Documentação do site (docs + demo)
 │   ├── .nojekyll         # Desativa Jekyll no GitHub Pages
 │   └── demo/             # Demonstração ao vivo (app financeira)
@@ -235,7 +234,7 @@ trabalho-backend/
 
 A pasta `/docs` é um site estático, zero-build e sem dependências, publicado pelo **GitHub Pages**, com duas partes:
 
-- **`docs/index.html`** — **documentação da API** (visão geral, autenticação JWT, referência de rotas, exemplos, formato de erro, CORS e credenciais de demonstração).
+- **`docs/index.html`** — **documentação da API** (visão geral, autenticação JWT, referência de rotas, exemplos, formato de erro, CORS e credenciais de demonstração). Cada rota traz exemplo de `curl` para terminal, campos pré-preenchidos e botão **Testar** que exibe a resposta real (status + JSON, formatado em campos quando aplicável).
 - **`docs/demo/`** — **demonstração ao vivo** da aplicação financeira (login, cadastro, lançamentos, cadastro de fontes/destinos, categorias, relatórios, saúde financeira), conectada à API publicada.
 
 ### Servir localmente

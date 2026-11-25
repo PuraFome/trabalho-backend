@@ -2,7 +2,7 @@
 
 Site estático, zero-build e sem dependências, publicado pelo GitHub Pages a partir da pasta `/docs` deste repositório. A pasta `/docs` contém **duas partes**:
 
-- **`docs/index.html`** — documentação da API (visão geral, autenticação JWT, referência de rotas, exemplos, importação/exportação, formato de erro, CORS, saúde financeira e credenciais de demonstração).
+- **`docs/index.html`** — documentação da API (visão geral, autenticação JWT, referência de rotas, exemplos, importação/exportação, formato de erro, CORS, saúde financeira e credenciais de demonstração). Cada rota traz exemplo de `curl` para terminal, campos pré-preenchidos e botão **Testar** que envia a requisição e exibe abaixo o status e a resposta em JSON (também formatada em campos quando for um objeto).
 - **`docs/demo/`** — a aplicação financeira completa (login, cadastro, lançamentos, cadastro de fontes/destinos, categorias, relatórios, saúde financeira) como demonstração ao vivo, conectada à API publicada.
 
 ## Servir localmente
@@ -38,8 +38,7 @@ npx serve docs -l 4200
 
 ```
 docs/
-├── index.html          # Documentação da API (visão geral, auth, rotas, exemplos, erros, CORS)
-├── styles.css          # Reset mínimo + tipografia base (16px)
+├── index.html          # Documentação da API (visão geral, auth, rotas, exemplos, importação/exportação, erros, CORS, saúde, painéis interativos)
 ├── README.md           # Este arquivo
 ├── .nojekyll           # Desativa Jekyll no GitHub Pages
 └── demo/               # Demonstração ao vivo (app financeira)
