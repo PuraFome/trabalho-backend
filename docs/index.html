@@ -1424,14 +1424,10 @@ curl -s http://localhost:3000/health
       }
 
       btn.disabled = true;
-      var opts = { method: method, headers: headers };
+      var opts = { method: method, headers: headers, cache: 'no-store' };
       if (inputs.body) opts.body = inputs.body.value;
 
-      btn.disabled = true;
-      var opts = { method: method, headers: headers };
-      if (inputs.body) opts.body = inputs.body.value;
-
-      fetch(url, opts).then(function (res) {
+      function render(res) {
         resp.textContent = '';
         resp.appendChild(el('span', 'status ' + statusClass(res.status), res.status + ' ' + (res.statusText || '')));
         if (meta.binary) {
@@ -1457,11 +1453,22 @@ curl -s http://localhost:3000/health
             var pre = el('pre'); pre.appendChild(el('code', null, text)); resp.appendChild(pre);
           }
         });
-      }).catch(function () {
-        resp.textContent = '';
-        resp.appendChild(el('span', 'status status-err', 'falha'));
-        resp.appendChild(el('p', 'error-msg', 'Falha na requisição. Verifique se a API está de pé e se o CORS_ORIGIN permite a origem ' + location.origin + '.'));
-      }).then(function () { btn.disabled = false; });
+      }
+
+      function run(attempt) {
+        return fetch(url, opts).then(render).catch(function (e) {
+          if (attempt < 2) {
+            resp.textContent = '';
+            resp.appendChild(el('span', 'status status-pending', 'API iniciando, tentando de novo…'));
+            return new Promise(function (resolve) { setTimeout(resolve, 1500 * (attempt + 1)); }).then(function () { return run(attempt + 1); });
+          }
+          resp.textContent = '';
+          resp.appendChild(el('span', 'status status-err', 'falha'));
+          resp.appendChild(el('p', 'error-msg', 'Falha na requisição' + (e && e.message ? ' (' + e.message + ')' : '') + '. A API pode estar iniciando (Render) ou o pedido foi bloqueado por extensão/ad-blocker. CORS_ORIGIN deve permitir ' + location.origin + '.'));
+        });
+      }
+
+      return run(0).then(function () { btn.disabled = false; });
     }
 
     function filenameFrom(res) {
