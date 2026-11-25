@@ -208,17 +208,17 @@ function gerarDicas({
 }
 
 module.exports = {
-  clamp,
   taxaPoupanca,
   comprometimentoCartoes,
   mesesDeReserva,
+  distribuicao503020,
+  listarParcelasFuturas,
+  projetarSaldo,
+  gerarDicas,
+  clamp,
   indiceEndividamento,
   runwayMeses,
   scoreSaude,
   concentracaoGastos,
-  tendenciaGastos,
-  distribuicao503020,
-  listarParcelasFuturas,
-  projetarSaldo,
-  gerarDicas
+  tendenciaGastos
 };
