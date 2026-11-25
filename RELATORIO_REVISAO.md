@@ -69,7 +69,7 @@ Os testes cobrem CPF, datas, deslocamento de meses, calculo de faturas, divisao 
 | RF7 | Agregacoes por categoria com SQL, percentuais e periodo anterior | Conforme |
 | RF8 | Agregacoes por fonte/destino e saldo de contas | Conforme |
 | RF9 | Faturas por fechamento/vencimento, parcelas e limites | Conforme |
-| Desafio | Rota de saude financeira com aviso, indicadores, projecoes e dicas | Implementado |
+| Desafio | Rota de saude financeira com aviso, 11 indicadores (taxaPoupanca, comprometimentoCartoes, parcelasFuturas, distribuicao503020, mesesDeReserva, categoriasForaDaCurva, indiceEndividamento, runwayMeses, scoreSaude, concentracaoGastos, tendenciaGastos) + projecao 6 meses; correcoes: (a) categoriaVsMedia usa media MENSAL dos 3 meses anteriores completos (era AVG por linha); (b) janelas UTC via utils/datas.js (sem new Date()); (c) formula da projecao documentada (saidas = mediaSaidas + parcelasDoMes, aproximacao aceita) | Implementado |
 | Respostas | Status HTTP 200/201/204/400/401/404/409/500 e JSON de erros | Conforme |
 
 ## Ajustes detalhados

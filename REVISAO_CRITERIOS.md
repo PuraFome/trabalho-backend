@@ -13,7 +13,7 @@ Resultado estimado da revisao:
 - C. Relatorios: 20/20
 - D. Organizacao e qualidade: 15/15
 - E. Apresentacao: parcialmente verificavel por artefatos; depende da apresentacao oral
-- Desafio: implementado, com 5 indicadores, projecao e dicas
+- Desafio: implementado, com 11 indicadores + projecao (12 analises), dicas (max 8) e aviso educativo
 - Total implementado: 85/100, antes da avaliacao oral
 
 ## A. Usuarios e autenticacao — 25/25
@@ -65,16 +65,21 @@ Nota potencial deste bloco na avaliacao presencial: 15/15.
 
 ## Desafio de saude financeira
 
-Implementacao adicional verificada:
+Implementacao adicional verificada (12 analises: 11 indicadores + projecao):
 
-- taxa de poupanca;
-- comprometimento com cartoes;
-- meses de reserva;
-- distribuicao 50/30/20;
-- parcelas futuras;
-- projecao em seis meses;
-- dicas geradas por regras;
-- aviso educativo obrigatorio.
+- taxaPoupanca (<10%);
+- comprometimentoCartoes (>30%);
+- parcelasFuturas;
+- distribuicao503020;
+- mesesDeReserva (<3m);
+- categoriasForaDaCurva (ratio >1.30x media mensal 3m anteriores);
+- indiceEndividamento (>15%);
+- runwayMeses (<3m);
+- scoreSaude;
+- concentracaoGastos (>60%);
+- tendenciaGastos (+-10% alta/baixa/estavel);
+- projecao 6 meses (saldo projetado <0);
+- dicas: maximo 8; aviso educativo sempre presente.
 
 Pontuacao extra: ate 10/10.
 
