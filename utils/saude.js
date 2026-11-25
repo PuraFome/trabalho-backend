@@ -125,6 +125,8 @@ function projetarSaldo(mediaEntradas, mediaSaidas, parcelasPorMes, meses = 6) {
     }
     const mesStr = `${ano}-${String(mes).padStart(2, '0')}`;
     const parcelasMes = Number(parcelasPorMes[mesStr] || 0);
+    // Fórmula documentada do grupo: saidas = mediaSaidas + parcelasDoMes.
+    // As parcelas do cartão já podem estar contidas na janela-base (aproximação aceita).
     const saidasProjetadas = mediaSaidas + parcelasMes;
     const saldoPrevisto = Number((mediaEntradas - saidasProjetadas).toFixed(2));
     resultado.push({
