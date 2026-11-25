@@ -161,7 +161,7 @@ describe('utils/saude.js - gerarDicas', () => {
       comprometimentoCartoes: 0.2,
       mesesDeReserva: 5,
       projecao: [{ mes: '2026-12', saldoPrevisto: 100 }],
-      categoriaForaDaCurva: null
+      categoriasForaDaCurva: []
     });
     assert.ok(dicas.some(d => d.includes('taxa de poupança') && d.includes('4.00%')));
   });
@@ -172,7 +172,7 @@ describe('utils/saude.js - gerarDicas', () => {
       comprometimentoCartoes: 0.62,
       mesesDeReserva: 5,
       projecao: [{ mes: '2026-12', saldoPrevisto: 100 }],
-      categoriaForaDaCurva: null
+      categoriasForaDaCurva: []
     });
     assert.ok(dicas.some(d => d.includes('comprometimento') && d.includes('62.00%')));
   });
@@ -183,7 +183,7 @@ describe('utils/saude.js - gerarDicas', () => {
       comprometimentoCartoes: 0.2,
       mesesDeReserva: 1.8,
       projecao: [{ mes: '2026-12', saldoPrevisto: 100 }],
-      categoriaForaDaCurva: null
+      categoriasForaDaCurva: []
     });
     assert.ok(dicas.some(d => d.includes('reserva') && d.includes('1.80')));
   });
@@ -194,7 +194,7 @@ describe('utils/saude.js - gerarDicas', () => {
       comprometimentoCartoes: 0.2,
       mesesDeReserva: 5,
       projecao: [{ mes: '2026-12', saldoPrevisto: 100 }],
-      categoriaForaDaCurva: { nome: 'Lazer', total: 1300, mediaAnterior: 1000, ratio: 1.3 }
+      categoriasForaDaCurva: [{ nome: 'Lazer', total: 1300, mediaAnterior: 1000, ratio: 1.3 }]
     });
     assert.ok(dicas.some(d => d.includes('Lazer') && d.includes('1,300.00') && d.includes('130.00%')));
   });
@@ -205,32 +205,40 @@ describe('utils/saude.js - gerarDicas', () => {
       comprometimentoCartoes: 0.2,
       mesesDeReserva: 5,
       projecao: [{ mes: '2026-12', saldoPrevisto: -210 }],
-      categoriaForaDaCurva: null
+      categoriasForaDaCurva: []
     });
     assert.ok(dicas.some(d => d.includes('saldo negativo') && d.includes('-210.00') && d.includes('2026-12')));
   });
 
-  test('dica positiva quando nenhuma regra dispara (máx 5 dicas)', () => {
+  test('dica positiva quando nenhuma regra dispara (máx 8 dicas)', () => {
     const dicas = gerarDicas({
       taxaPoupanca: 0.2,
       comprometimentoCartoes: 0.2,
       mesesDeReserva: 5,
       projecao: [{ mes: '2026-12', saldoPrevisto: 100 }],
-      categoriaForaDaCurva: null
+      categoriasForaDaCurva: [],
+      indiceEndividamento: 0.05,
+      runwayMeses: 6,
+      concentracaoGastos: { indiceConcentracao: 0.3 },
+      tendenciaGastos: { direcao: 'estavel', variacaoPercentual: 0 }
     });
     assert.equal(dicas.length, 1);
     assert.ok(dicas[0].includes('Parabéns'));
   });
 
-  test('limita a 5 dicas no máximo', () => {
+  test('limita a 8 dicas no máximo', () => {
     const dicas = gerarDicas({
       taxaPoupanca: 0.04,
       comprometimentoCartoes: 0.62,
       mesesDeReserva: 1.8,
       projecao: [{ mes: '2026-12', saldoPrevisto: -210 }],
-      categoriaForaDaCurva: { nome: 'Lazer', total: 1300, mediaAnterior: 1000, ratio: 1.3 }
+      categoriasForaDaCurva: [{ nome: 'Lazer', total: 1300, mediaAnterior: 1000, ratio: 1.3 }],
+      indiceEndividamento: 0.2,
+      runwayMeses: 1,
+      concentracaoGastos: { indiceConcentracao: 0.7 },
+      tendenciaGastos: { direcao: 'alta', variacaoPercentual: 25 }
     });
-    assert.ok(dicas.length <= 5);
+    assert.ok(dicas.length <= 8);
   });
 
   test('retorna números finitos (sem NaN/Infinity)', () => {
@@ -239,7 +247,11 @@ describe('utils/saude.js - gerarDicas', () => {
       comprometimentoCartoes: 0.62,
       mesesDeReserva: 1.8,
       projecao: [{ mes: '2026-12', saldoPrevisto: -210 }],
-      categoriaForaDaCurva: { nome: 'Lazer', total: 1300, mediaAnterior: 1000, ratio: 1.3 }
+      categoriasForaDaCurva: [{ nome: 'Lazer', total: 1300, mediaAnterior: 1000, ratio: 1.3 }],
+      indiceEndividamento: 0.2,
+      runwayMeses: 1,
+      concentracaoGastos: { indiceConcentracao: 0.7 },
+      tendenciaGastos: { direcao: 'alta', variacaoPercentual: 25 }
     });
     for (const dica of dicas) {
       assert.ok(typeof dica === 'string');

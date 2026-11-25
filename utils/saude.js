@@ -151,7 +151,11 @@ function gerarDicas({
   comprometimentoCartoes: cc,
   mesesDeReserva: mr,
   projecao,
-  categoriaForaDaCurva
+  categoriasForaDaCurva,
+  indiceEndividamento,
+  runwayMeses,
+  concentracaoGastos,
+  tendenciaGastos
 }) {
   const dicas = [];
 
@@ -167,20 +171,38 @@ function gerarDicas({
     dicas.push(`Você tem ${mr.toFixed(2)} meses de reserva, abaixo do recomendado de 3 meses.`);
   }
 
-  if (categoriaForaDaCurva) {
-    dicas.push(`A categoria "${categoriaForaDaCurva.nome}" gastou ${formatarNumero(categoriaForaDaCurva.total)}, ${formatarNumero(categoriaForaDaCurva.ratio * 100)}% acima da média de ${formatarNumero(categoriaForaDaCurva.mediaAnterior)} dos 3 meses anteriores.`);
+  if (Array.isArray(categoriasForaDaCurva)) {
+    for (const cat of categoriasForaDaCurva) {
+      dicas.push(`A categoria "${cat.nome}" gastou ${formatarNumero(cat.total)}, ${formatarNumero(cat.ratio * 100)}% acima da média de ${formatarNumero(cat.mediaAnterior)} dos 3 meses anteriores.`);
+    }
   }
 
-  const mesNegativo = projecao.find(p => p.saldoPrevisto < 0);
+  const mesNegativo = projecao?.find(p => p.saldoPrevisto < 0);
   if (mesNegativo) {
     dicas.push(`Projeção indica saldo negativo de ${formatarNumero(mesNegativo.saldoPrevisto)} em ${mesNegativo.mes}.`);
+  }
+
+  if (indiceEndividamento > 0.15) {
+    dicas.push(`Seu endividamento compromete ${(indiceEndividamento * 100).toFixed(2)}% da renda dos próximos 12 meses, acima do recomendado de 15%.`);
+  }
+
+  if (runwayMeses < 3) {
+    dicas.push(`Seu saldo em contas cobre ${runwayMeses.toFixed(2)} meses de despesas (referência: 3 a 6 meses).`);
+  }
+
+  if (concentracaoGastos?.indiceConcentracao > 0.60) {
+    dicas.push(`Suas 3 maiores categorias representam ${(concentracaoGastos.indiceConcentracao * 100).toFixed(2)}% das despesas do mês; considere diversificar.`);
+  }
+
+  if (tendenciaGastos?.direcao === 'alta') {
+    dicas.push(`Suas despesas do mês estão ${tendenciaGastos.variacaoPercentual.toFixed(2)}% acima da média dos últimos 3 meses.`);
   }
 
   if (dicas.length === 0) {
     dicas.push('Sua taxa de poupança está acima de 10%, comprometimento com cartões abaixo de 30% e reserva superior a 3 meses. Parabéns!');
   }
 
-  return dicas.slice(0, 5);
+  return dicas.slice(0, 8);
 }
 
 module.exports = {
