@@ -430,22 +430,24 @@ function renderLancamentos() {
     </div>
 
     <div class="card" id="lancamentos-tabela-wrap">
-      <table id="lancamentos-tabela">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Descrição</th>
-            <th>Categoria</th>
-            <th>Fonte/Destino</th>
-            <th>Parcela</th>
-            <th class="text-right">Valor</th>
-            <th class="text-right">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="lancamentos-tbody">
-          <tr><td colspan="7" class="text-center">Carregando…</td></tr>
-        </tbody>
-      </table>
+      <div class="table-wrapper">
+        <table id="lancamentos-tabela" class="relatorio-tabela">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Fonte/Destino</th>
+              <th>Parcela</th>
+              <th class="text-right">Valor</th>
+              <th class="text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lancamentos-tbody">
+            <tr><td colspan="7" class="text-center">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card" id="lancamentos-paginacao">
