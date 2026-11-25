@@ -120,6 +120,9 @@ function showTab(name) {
   if (name === "relatorios" && getToken()) {
     renderRelatorios();
   }
+  if (name === "saude" && getToken()) {
+    renderSaudeFinanceira();
+  }
 }
 
 // --- Login view ---
@@ -1181,6 +1184,267 @@ function renderRelatorios() {
   carregarRelatorioCategorias();
   carregarRelatorioFontes();
   carregarRelatorioFaturas();
+}
+
+// --- Saúde Financeira view ---
+async function renderSaudeFinanceira() {
+  const panel = document.getElementById("panel-saude");
+  if (!panel) return;
+
+  const token = getToken();
+  if (!token) {
+    panel.innerHTML = `<div class="alert alert-error">Sessão expirada. Faça login novamente.</div>`;
+    return;
+  }
+
+  panel.innerHTML = `<p class="text-center">Carregando…</p>`;
+
+  try {
+    const data = await api("/saude-financeira", { token });
+
+    const aviso = data.aviso || "";
+    const ind = data.indicadores || {};
+    const projecao = data.projecao || [];
+    const dicas = data.dicas || [];
+
+    let html = "";
+
+    // 1. Aviso banner
+    if (aviso) {
+      html += `<div class="alert alert-info">${escapeHtml(aviso)}</div>`;
+    }
+
+    // 2. Scalar indicators cards grid
+    const taxaPoupanca = Number(ind.taxaPoupanca || 0);
+    const comprometimentoCartoes = Number(ind.comprometimentoCartoes || 0);
+    const mesesDeReserva = Number(ind.mesesDeReserva || 0);
+    const indiceEndividamento = Number(ind.indiceEndividamento || 0);
+    const runwayMeses = Number(ind.runwayMeses || 0);
+    const scoreSaude = Number(ind.scoreSaude || 0);
+
+    html += `
+      <div class="card">
+        <h2>Indicadores Principais</h2>
+        <div class="resumo-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+          <div class="resumo-item">
+            <span class="resumo-label">Taxa de Poupança</span>
+            <span class="resumo-valor">${escapeHtml((taxaPoupanca * 100).toFixed(2))}%</span>
+          </div>
+          <div class="resumo-item">
+            <span class="resumo-label">Comprometimento Cartões</span>
+            <span class="resumo-valor">${escapeHtml((comprometimentoCartoes * 100).toFixed(2))}%</span>
+          </div>
+          <div class="resumo-item">
+            <span class="resumo-label">Meses de Reserva</span>
+            <span class="resumo-valor">${escapeHtml(mesesDeReserva.toFixed(2))}</span>
+          </div>
+          <div class="resumo-item">
+            <span class="resumo-label">Índice de Endividamento</span>
+            <span class="resumo-valor">${escapeHtml((indiceEndividamento * 100).toFixed(2))}%</span>
+          </div>
+          <div class="resumo-item">
+            <span class="resumo-label">Runway (meses)</span>
+            <span class="resumo-valor">${escapeHtml(runwayMeses.toFixed(2))}</span>
+          </div>
+          <div class="resumo-item">
+            <span class="resumo-label">Score de Saúde</span>
+            <span class="resumo-valor">${escapeHtml(String(Math.round(scoreSaude)))}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 3. 50/30/20 sub-table
+    const dist = ind.distribuicao503020 || {};
+    const necessidades = dist.necessidades || { total: 0, percentual: 0 };
+    const desejos = dist.desejos || { total: 0, percentual: 0 };
+    const poupanca = dist.poupanca || { total: 0, percentual: 0 };
+    const naoClassificado = dist.naoClassificado || { total: 0, percentual: 0 };
+
+    html += `
+      <div class="card">
+        <h2>Distribuição 50/30/20</h2>
+        <table class="relatorio-tabela">
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th class="text-right">Total</th>
+              <th class="text-right">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${escapeHtml("Necessidades")}</td>
+              <td class="text-right">${formatCurrency(necessidades.total)}</td>
+              <td class="text-right">${escapeHtml((Number(necessidades.percentual) * 100).toFixed(2))}%</td>
+            </tr>
+            <tr>
+              <td>${escapeHtml("Desejos")}</td>
+              <td class="text-right">${formatCurrency(desejos.total)}</td>
+              <td class="text-right">${escapeHtml((Number(desejos.percentual) * 100).toFixed(2))}%</td>
+            </tr>
+            <tr>
+              <td>${escapeHtml("Poupança")}</td>
+              <td class="text-right">${formatCurrency(poupanca.total)}</td>
+              <td class="text-right">${escapeHtml((Number(poupanca.percentual) * 100).toFixed(2))}%</td>
+            </tr>
+            <tr>
+              <td>${escapeHtml("Não Classificado")}</td>
+              <td class="text-right">${formatCurrency(naoClassificado.total)}</td>
+              <td class="text-right">${escapeHtml((Number(naoClassificado.percentual) * 100).toFixed(2))}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // 4. Out-of-curve list
+    const foraDaCurva = Array.isArray(ind.categoriasForaDaCurva) ? ind.categoriasForaDaCurva : [];
+    if (foraDaCurva.length > 0) {
+      const rowsFora = foraDaCurva.map(cat => `
+        <tr>
+          <td>${escapeHtml(cat.nome || "")}</td>
+          <td class="text-right">${formatCurrency(cat.total)}</td>
+          <td class="text-right">${formatCurrency(cat.mediaAnterior)}</td>
+          <td class="text-right">${escapeHtml(Number(cat.ratio || 0).toFixed(2))}x</td>
+        </tr>
+      `).join("");
+      html += `
+        <div class="card">
+          <h2>Categorias Fora da Curva (> 1.30× média anterior)</h2>
+          <table class="relatorio-tabela">
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th class="text-right">Total Atual</th>
+                <th class="text-right">Média Anterior (3m)</th>
+                <th class="text-right">Ratio</th>
+              </tr>
+            </thead>
+            <tbody>${rowsFora}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // 5. Top-3 concentration list
+    const conc = ind.concentracaoGastos || { categorias: [], totalGastos: 0, indiceConcentracao: 0 };
+    if (conc.categorias && conc.categorias.length > 0) {
+      const rowsConc = conc.categorias.map(cat => `
+        <tr>
+          <td>${escapeHtml(cat.nome || "")}</td>
+          <td class="text-right">${formatCurrency(cat.total)}</td>
+          <td class="text-right">${escapeHtml((Number(cat.percentual || 0) * 100).toFixed(2))}%</td>
+        </tr>
+      `).join("");
+      html += `
+        <div class="card">
+          <h2>Concentração de Gastos (Top 3)</h2>
+          <p class="text-muted">Índice de concentração: ${escapeHtml((Number(conc.indiceConcentracao || 0) * 100).toFixed(2))}% do total de ${formatCurrency(conc.totalGastos)}</p>
+          <table class="relatorio-tabela">
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th class="text-right">Total</th>
+                <th class="text-right">%</th>
+              </tr>
+            </thead>
+            <tbody>${rowsConc}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // 6. Trend line
+    const tend = ind.tendenciaGastos || {};
+    if (tend.mesAtual) {
+      const variacao = Number(tend.variacaoPercentual || 0);
+      const direcao = tend.direcao || "estavel";
+      const direcaoLabel = direcao === "alta" ? "Alta" : direcao === "baixa" ? "Baixa" : "Estável";
+      const direcaoClass = direcao === "alta" ? "negativo" : direcao === "baixa" ? "positivo" : "";
+      html += `
+        <div class="card">
+          <h2>Tendência de Gastos</h2>
+          <div class="resumo-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+            <div class="resumo-item">
+              <span class="resumo-label">Mês Atual</span>
+              <span class="resumo-valor">${escapeHtml(tend.mesAtual)}</span>
+            </div>
+            <div class="resumo-item">
+              <span class="resumo-label">Saídas do Mês</span>
+              <span class="resumo-valor">${formatCurrency(tend.saidasMesAtual)}</span>
+            </div>
+            <div class="resumo-item">
+              <span class="resumo-label">Média 3 Meses</span>
+              <span class="resumo-valor">${formatCurrency(tend.media3Meses)}</span>
+            </div>
+            <div class="resumo-item">
+              <span class="resumo-label">Variação</span>
+              <span class="resumo-valor ${direcaoClass}">${variacao >= 0 ? "+" : ""}${escapeHtml(variacao.toFixed(2))}%</span>
+            </div>
+            <div class="resumo-item">
+              <span class="resumo-label">Direção</span>
+              <span class="resumo-valor ${direcaoClass}">${escapeHtml(direcaoLabel)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 7. Projection table
+    if (projecao.length > 0) {
+      const rowsProj = projecao.map(p => {
+        const saldo = Number(p.saldoPrevisto || 0);
+        const negativoClass = saldo < 0 ? " negativo" : "";
+        return `
+          <tr class="${negativoClass}">
+            <td>${escapeHtml(p.mes || "")}</td>
+            <td class="text-right">${formatCurrency(p.entradas)}</td>
+            <td class="text-right">${formatCurrency(p.saidas)}</td>
+            <td class="text-right${negativoClass}">${formatCurrency(saldo)}</td>
+          </tr>
+        `;
+      }).join("");
+      html += `
+        <div class="card">
+          <h2>Projeção (6 meses)</h2>
+          <table class="relatorio-tabela">
+            <thead>
+              <tr>
+                <th>Mês</th>
+                <th class="text-right">Entradas</th>
+                <th class="text-right">Saídas</th>
+                <th class="text-right">Saldo Previsto</th>
+              </tr>
+            </thead>
+            <tbody>${rowsProj}</tbody>
+          </table>
+          <p class="text-muted mt-2">Linhas em vermelho indicam saldo previsto negativo.</p>
+        </div>
+      `;
+    }
+
+    // 8. Dicas list
+    if (dicas.length > 0) {
+      const dicasHtml = dicas.map(d => `<li>${escapeHtml(d)}</li>`).join("");
+      html += `
+        <div class="card">
+          <h2>Dicas</h2>
+          <ul>${dicasHtml}</ul>
+        </div>
+      `;
+    }
+
+    panel.innerHTML = html;
+
+  } catch (err) {
+    if (err.status === 401) {
+      clearToken();
+      panel.innerHTML = `<div class="alert alert-error">Sessão expirada. Faça login novamente.</div>`;
+    } else {
+      panel.innerHTML = `<div class="alert alert-error">${escapeHtml(err.message || "Erro ao carregar saúde financeira.")}</div>`;
+    }
+  }
 }
 
 async function carregarRelatorioCategorias() {
