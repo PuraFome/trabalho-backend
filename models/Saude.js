@@ -86,6 +86,45 @@ class Saude {
     return resultado;
   }
 
+  async saldoContas(usuarioId) {
+    const [rows] = await pool.query(
+      `SELECT
+         SUM(CASE WHEN l.tipo = 'entrada' THEN l.valor ELSE 0 END) AS e,
+         SUM(CASE WHEN l.tipo = 'saida' THEN l.valor ELSE 0 END) AS s
+       FROM lancamentos l
+       JOIN fontes_destinos f ON f.id = l.fonte_destino_id
+       WHERE l.usuario_id = ? AND f.tipo = 'conta'`,
+      [usuarioId]
+    );
+
+    const entradas = Number(rows[0].e || 0);
+    const saidas = Number(rows[0].s || 0);
+    return Number((entradas - saidas).toFixed(2));
+  }
+
+  async gastosPorCategoriaMes(usuarioId, inicio, fim) {
+    const [rows] = await pool.query(
+      `SELECT c.nome, SUM(l.valor) AS total
+       FROM lancamentos l
+       JOIN categorias c ON c.id = l.categoria_id
+       WHERE l.usuario_id = ? AND l.tipo = 'saida' AND l.data BETWEEN ? AND ?
+       GROUP BY c.id, c.nome
+       ORDER BY total DESC`,
+      [usuarioId, inicio, fim]
+    );
+
+    const categorias = rows.map((row) => ({
+      nome: row.nome,
+      total: Number(row.total)
+    }));
+
+    const totalGastos = Number(
+      categorias.reduce((acc, cat) => acc + cat.total, 0).toFixed(2)
+    );
+
+    return { categorias, totalGastos };
+  }
+
   async categoriaVsMedia(usuarioId) {
     const hoje = hojeUTC();
     const inicioAtual = `${hoje.slice(0, 7)}-01`;
