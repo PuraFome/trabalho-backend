@@ -32,7 +32,7 @@ Esta API foi desenvolvida para a disciplina de **Backend** com as seguintes cara
 - **Parcelamento real** — divisão em centavos, resto na 1ª parcela, `grupo_parcelamento` UUID
 - **Faturas de cartão** — regra de fechamento/vencimento fiel ao enunciado (Tabela 11.3)
 - **Relatórios agregados** — `SUM/GROUP BY` no banco, período anterior = mês de calendário anterior
-- **Desafio +10** — 5 indicadores, projeção 6 meses, dicas com limiares fixos, aviso educativo
+- **Desafio +10** — 12 análises (11 indicadores + projeção), dicas com limiares fixos, aviso educativo
 - **Docker-first** — `docker compose up -d --build` sobe DB + API com healthchecks
 
 ---
@@ -201,7 +201,7 @@ trabalho-backend/
 │   ├── csv.js            # Parser CSV sem dependências
 │   ├── xlsx.js           # Leitura/escrita de .xlsx (ZIP + SpreadsheetML) sem dependências
 │   ├── importacaoLancamentos.js # Modelo e validação da importação por linha/célula
-│   └── saude.js          # 5 indicadores + projeção + dicas
+│   └── saude.js          # 12 indicadores + projeção + dicas
 ├── database/
 │   ├── connection.js     # Pool mysql2/promise (UTC, dateStrings)
 │   ├── schema.sql        # 4 tabelas, FKs, UNIQUE/CHECK nomeados
@@ -411,17 +411,23 @@ Todos os `DECIMAL`/`SUM` convertidos com `Number()` uma única vez no model. Rel
 | `categorias` | `classificacao` | `ENUM('necessidade','desejo','poupanca')` | Regra 50/30/20 |
 | `fontes_destinos` | `reserva` | `TINYINT(1) DEFAULT 0` | Contas de reserva (meses de reserva) |
 
-### 5 Indicadores (fórmulas em `utils/saude.js`)
+### 12 Análises (11 Indicadores + Projeção) (fórmulas em `utils/saude.js`)
 
 | # | Indicador | Fórmula | Saída |
 |---|-----------|---------|-------|
-| 1 | **Taxa de Poupança** | `entradas > 0 ? (entradas - saidas) / entradas : 0` | 4 casas (ex.: `0.1803`) |
-| 2 | **Comprometimento Cartões** | `mediaEntradas > 0 ? totalFaturas3m / mediaEntradas : 0` | 4 casas (ex.: `0.2205`) |
+| 1 | **Taxa de Poupança** | `entradas > 0 ? (entradas - saidas) / entradas : 0` | 4 casas (ex.: `0.1686`) |
+| 2 | **Comprometimento Cartões** | `mediaEntradas > 0 ? totalFaturas3m / mediaEntradas : 0` | 4 casas (ex.: `0.2558`) |
 | 3 | **Meses de Reserva** | `mediaSaidas > 0 ? saldoReserva / mediaSaidas : 0` | 2 casas (ex.: `0.00`) |
 | 4 | **Distribuição 50/30/20** | `% = totalCategoria / entradasMes` (4 casas) | Objeto com 4 chaves |
 | 5 | **Parcelas Futuras** | Agrupa `valor` por `referencia` (AAAA-MM) dos cartões | `[{mes,total}]` |
+| 6 | **Categorias Fora da Curva** | por categoria do mês, `mediaAnterior = Σ saídas dos 3 meses anteriores completos ÷ 3` (2 casas); `ratio = totalAtual/mediaAnterior` (4 casas); inclui apenas `mediaAnterior > 0 && ratio > 1.30` | Array de objetos `{nome,total,mediaAnterior,ratio}` |
+| 7 | **Índice de Endividamento** | `totalParcelasFuturas/(mediaEntradasMensal×12)` (4 casas) — totalParcelasFuturas = Σ parcelasFuturas[].total (horizonte 12 meses) | 4 casas (ex.: `0.0550`) |
+| 8 | **Runway (meses)** | `saldoContas/mediaSaidasMensal` (2 casas) — saldoContas = entradas−saídas em fontes `tipo='conta'` (todas as datas; distinto de saldoReserva que usa `reserva=1`) | 2 casas (ex.: `-2.12`) |
+| 9 | **Score de Saúde** | `round(clamp(taxaPoupanca/0.20)×40 + clamp(1−comprometimento/0.50)×30 + clamp(mesesReserva/6)×30)` (0-100) | Inteiro 0-100 (ex.: `48`) |
+| 10 | **Concentração de Gastos** | `{categorias: top3 {nome,total,percentual}, totalGastos, indiceConcentracao}` (4 casas) | Objeto com top 3, total, índice |
+| 11 | **Tendência de Gastos** | `{mesAtual, saidasMesAtual, media3Meses, variacaoPercentual, direcao}` — direcao: alta ≥ +10%, baixa ≤ −10%, estável entre | Objeto com direção |
 
-> **Entradas/Saídas base:** últimos 3 meses completos (mês corrente + 2 anteriores). `saldoReserva` = soma entradas-saídas em fontes com `reserva=1` (todas datas).
+> **Entradas/Saídas base:** janela-base = mês corrente + 2 anteriores (média mensal = total/3); média anterior (fora da curva) = 3 meses completos anteriores (m−3-01 … m−1-último-dia). Todas via helpers UTC (`utils/datas.js`), nunca `new Date()`.
 
 ### Projeção (6 meses)
 ```js
@@ -431,7 +437,9 @@ for cada mês futuro:
   saldoPrevisto = mediaEntradas - saidasProjetadas
 ```
 
-### 5 Limiares de Dicas (regra oficial do grupo)
+> **Nota sobre a fórmula de projeção (decisão A):** A projeção usa `saidas = mediaSaidasMensal + parcelasDoMes` (fórmula documentada do grupo); parcelas do cartão podem já estar contidas na janela-base (aproximação aceita).
+
+### 9 Limiares de Dicas (regra oficial do grupo)
 
 | # | Condição | Texto da Dica |
 |---|----------|---------------|
@@ -440,8 +448,12 @@ for cada mês futuro:
 | 3 | `mesesDeReserva < 3` | `"Você tem X.XX meses de reserva, abaixo do recomendado de 3 meses."` |
 | 4 | Alguma categoria do mês corrente `> 1.30 × média 3m anteriores` (média > 0) | `"A categoria 'X' gastou R$ Y, Z.ZZ% acima da média de R$ W dos 3 meses anteriores."` |
 | 5 | Algum mês da projeção com `saldoPrevisto < 0` | `"Projeção indica saldo negativo de R$ X em AAAA-MM."` |
+| 6 | `indiceEndividamento > 0.15` | `"Seu endividamento compromete X.XX% da renda dos próximos 12 meses, acima do recomendado de 15%."` |
+| 7 | `runwayMeses < 3` | `"Seu saldo em contas cobre X.XX meses de despesas (referência: 3 a 6 meses)."` |
+| 8 | `concentracaoGastos.indiceConcentracao > 0.60` | `"Suas 3 maiores categorias representam XX.XX% das despesas do mês; considere diversificar."` |
+| 9 | `tendenciaGastos.direcao === 'alta'` | `"Suas despesas do mês estão XX.XX% acima da média dos últimos 3 meses."` |
 
-- Máximo **5 dicas**. Se nenhuma dispara → **1 dica positiva**: `"Sua taxa de poupança está acima de 10%, comprometimento com cartões abaixo de 30% e reserva superior a 3 meses. Parabéns!"`
+- Máximo **8 dicas**. Se nenhuma dispara → **1 dica positiva**: `"Sua taxa de poupança está acima de 10%, comprometimento com cartões abaixo de 30% e reserva superior a 3 meses. Parabéns!"`
 
 ### Aviso Educativo (sempre presente)
 ```json
@@ -453,22 +465,73 @@ for cada mês futuro:
 {
   "aviso": "Informações educativas; não constituem recomendação financeira profissional.",
   "indicadores": {
-    "taxaPoupanca": 0.1803,
-    "comprometimentoCartoes": 0.2205,
-    "parcelasFuturas": [{ "mes": "2026-12", "total": 513.34 }, ...],
+    "taxaPoupanca": 0.1686,
+    "comprometimentoCartoes": 0.2558,
+    "parcelasFuturas": [
+      { "mes": "2026-12", "total": 596.68 },
+      { "mes": "2027-01", "total": 366.66 },
+      { "mes": "2027-02", "total": 366.66 },
+      { "mes": "2027-03", "total": 300 },
+      { "mes": "2027-04", "total": 300 },
+      { "mes": "2027-05", "total": 300 },
+      { "mes": "2027-06", "total": 300 },
+      { "mes": "2027-07", "total": 300 },
+      { "mes": "2027-08", "total": 300 },
+      { "mes": "2027-09", "total": 300 }
+    ],
     "distribuicao503020": {
-      "necessidades": { "total": 3126.67, "percentual": 0.6013 },
-      "desejos": { "total": 3180, "percentual": 0.6115 },
+      "necessidades": { "total": 3160, "percentual": 0.6077 },
+      "desejos": { "total": 3330, "percentual": 0.6404 },
       "poupanca": { "total": 0, "percentual": 0 },
       "naoClassificado": { "total": 0, "percentual": 0 }
     },
-    "mesesDeReserva": 0
+    "mesesDeReserva": 0,
+    "categoriasForaDaCurva": [
+      { "nome": "Moradia", "total": 1500, "mediaAnterior": 1000, "ratio": 1.5 },
+      { "nome": "Alimentação", "total": 1060, "mediaAnterior": 640, "ratio": 1.6563 },
+      { "nome": "Mobilidade", "total": 230, "mediaAnterior": 153.33, "ratio": 1.5 },
+      { "nome": "Saúde", "total": 120, "mediaAnterior": 80, "ratio": 1.5 },
+      { "nome": "Lazer", "total": 180, "mediaAnterior": 120, "ratio": 1.5 },
+      { "nome": "Educação", "total": 250, "mediaAnterior": 166.67, "ratio": 1.5 }
+    ],
+    "indiceEndividamento": 0.055,
+    "runwayMeses": -2.12,
+    "scoreSaude": 48,
+    "concentracaoGastos": {
+      "categorias": [
+        { "nome": "Outras saídas", "total": 3150, "percentual": 0.4854 },
+        { "nome": "Moradia", "total": 1500, "percentual": 0.2311 },
+        { "nome": "Alimentação", "total": 1060, "percentual": 0.1633 }
+      ],
+      "totalGastos": 6490,
+      "indiceConcentracao": 0.8798
+    },
+    "tendenciaGastos": {
+      "mesAtual": "2026-11",
+      "saidasMesAtual": 6490,
+      "media3Meses": 4323.333333333333,
+      "variacaoPercentual": 50.12,
+      "direcao": "alta"
+    }
   },
   "projecao": [
-    { "mes": "2026-11", "entradas": 5200, "saidas": 4262.22, "saldoPrevisto": 937.78 },
-    ...
+    { "mes": "2026-11", "entradas": 5200, "saidas": 4323.33, "saldoPrevisto": 876.67 },
+    { "mes": "2026-12", "entradas": 5200, "saidas": 4920.01, "saldoPrevisto": 279.99 },
+    { "mes": "2027-01", "entradas": 5200, "saidas": 4689.99, "saldoPrevisto": 510.01 },
+    { "mes": "2027-02", "entradas": 5200, "saidas": 4689.99, "saldoPrevisto": 510.01 },
+    { "mes": "2027-03", "entradas": 5200, "saidas": 4623.33, "saldoPrevisto": 576.67 },
+    { "mes": "2027-04", "entradas": 5200, "saidas": 4623.33, "saldoPrevisto": 576.67 }
   ],
-  "dicas": ["Você tem 0.00 meses de reserva, abaixo do recomendado de 3 meses."]
+  "dicas": [
+    "Você tem 0.00 meses de reserva, abaixo do recomendado de 3 meses.",
+    "A categoria \"Moradia\" gastou 1,500.00, 150.00% acima da média de 1,000.00 dos 3 meses anteriores.",
+    "A categoria \"Alimentação\" gastou 1,060.00, 165.63% acima da média de 640.00 dos 3 meses anteriores.",
+    "A categoria \"Mobilidade\" gastou 230.00, 150.00% acima da média de 153.33 dos 3 meses anteriores.",
+    "A categoria \"Saúde\" gastou 120.00, 150.00% acima da média de 80.00 dos 3 meses anteriores.",
+    "A categoria \"Lazer\" gastou 180.00, 150.00% acima da média de 120.00 dos 3 meses anteriores.",
+    "A categoria \"Educação\" gastou 250.00, 150.00% acima da média de 166.67 dos 3 meses anteriores.",
+    "Seu saldo em contas cobre -2.12 meses de despesas (referência: 3 a 6 meses)."
+  ]
 }
 ```
 
@@ -506,7 +569,7 @@ for cada mês futuro:
 | **3. Autenticação & Isolamento** | 1:30 | Cadastro (normalização, 409 banco), Login (JWT 1h, 401 genérico), `/auth/me`. **Demo isolamento:** token Ana cria categoria; token Bruno tenta `PUT` na categoria de Ana → **404** (não 403). Explica middleware `express-jwt` + error handler 401. | Integrante A |
 | **4. CRUDs + Parcelamento** | 1:30 | Categorias (classificação 50/30/20), Fontes/Destinos (cartão exige 3 campos). **Lançamentos:** POST único, POST **parcelado 10×** (resto na 1ª), GET com filtros/paginação/resumo, `DELETE ?todasParcelas=true`. Mostra `valor` numérico, `parcela:"k/N"`. | Integrante B |
 | **5. Relatórios** | 1:30 | `/relatorios/categorias` (SUM/GROUP BY, % anterior, variação), `/relatorios/fontes-destinos` (entradas/saidas/saldo contas), `/relatorios/faturas` (fatura atual + futuras, limite usado/disponível). Passa compra 10× aparecendo em 10 faturas distintas. | Integrante A |
-| **6. Desafio: Saúde Financeira** | 1:30 | Colunas extras (`classificacao`, `reserva`). 5 indicadores + projeção 6m + dicas (limiares fixos: 10%, 30%, 3m, 1.30×, saldo<0). Aviso educativo. Mostra resposta real com dados do seed. | Integrante B |
+| **6. Desafio: Saúde Financeira** | 1:30 | Colunas extras (`classificacao`, `reserva`). 12 análises (11 indicadores + projeção), dicas (limiares: 15% endividamento, 3m runway, 60% concentração, ±10% tendência, 10% poupança, 30% cartões, 3m reserva, 1.30× fora da curva, saldo<0). Aviso educativo. Mostra resposta real com dados do seed e aba demo. | Integrante B |
 | **7. Qualidade & Entregáveis** | 0:30 | `npm test` verde (CPF, datas, parcelas, faturas, saúde). `testes/requisicoes.md` executa A–L sem 500. Checklist §11.12 tudo ✅. Guardrails: 7 deps, 0 SQL em rotas, 0 `senha_hash`, 0 cross-user, `.env` no gitignore. | Integrante A |
 
 ### Dicas de Apresentação
