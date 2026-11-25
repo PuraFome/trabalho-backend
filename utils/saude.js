@@ -27,6 +27,42 @@ function runwayMeses(saldoContas, mediaSaidasMensal) {
   return Number((saldoContas / mediaSaidasMensal).toFixed(2));
 }
 
+function scoreSaude({ taxaPoupanca, comprometimentoCartoes, mesesDeReserva }) {
+  return Math.round(
+    clamp(taxaPoupanca / 0.20, 0, 1) * 40 +
+      clamp(1 - comprometimentoCartoes / 0.50, 0, 1) * 30 +
+      clamp(mesesDeReserva / 6, 0, 1) * 30
+  );
+}
+
+function concentracaoGastos(categorias, totalGastos) {
+  const top3 = categorias.slice(0, 3);
+  const categoriasTop3 = top3.map(categoria => ({
+    nome: categoria.nome,
+    total: categoria.total,
+    percentual: totalGastos > 0 ? Number((categoria.total / totalGastos).toFixed(4)) : 0
+  }));
+  const somaTop3 = top3.reduce((soma, categoria) => soma + categoria.total, 0);
+  const indiceConcentracao = totalGastos > 0 ? Number((somaTop3 / totalGastos).toFixed(4)) : 0;
+  return {
+    categorias: categoriasTop3,
+    totalGastos,
+    indiceConcentracao
+  };
+}
+
+function tendenciaGastos(mesAtual, saidasMesAtual, mediaSaidasMensal) {
+  const variacaoPercentual = mediaSaidasMensal > 0 ? Number((((saidasMesAtual - mediaSaidasMensal) / mediaSaidasMensal) * 100).toFixed(2)) : 0;
+  const direcao = variacaoPercentual >= 10 ? 'alta' : variacaoPercentual <= -10 ? 'baixa' : 'estavel';
+  return {
+    mesAtual,
+    saidasMesAtual,
+    media3Meses: mediaSaidasMensal,
+    variacaoPercentual,
+    direcao
+  };
+}
+
 function distribuicao503020(saidasPorClassificacao, entradasMes) {
   const necessidade = Number(saidasPorClassificacao.necessidade || 0);
   const desejo = Number(saidasPorClassificacao.desejo || 0);
@@ -154,6 +190,9 @@ module.exports = {
   mesesDeReserva,
   indiceEndividamento,
   runwayMeses,
+  scoreSaude,
+  concentracaoGastos,
+  tendenciaGastos,
   distribuicao503020,
   listarParcelasFuturas,
   projetarSaldo,
