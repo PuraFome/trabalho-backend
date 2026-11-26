@@ -1,5 +1,7 @@
 # API Finanças — Controle Financeiro Pessoal
 
+> **📚 Documentação da API:** [https://purafome.github.io/trabalho-backend/](https://purafome.github.io/trabalho-backend/)
+>
 > API REST completa para controle financeiro pessoal: autenticação JWT, CRUDs de categorias/fontes-destinos/lancamentos com parcelamento no cartão, três relatórios (por categoria, por fonte/destino, faturas futuras) e rota extra de saúde financeira (desafio). Executável via **Docker Compose** ou **npm** local.
 
 ---
