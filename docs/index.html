@@ -1101,7 +1101,7 @@ curl -s http://localhost:3000/health
       'PUT /fontes-destinos/:id': { auth: true, pathParams: { id: '3' }, body: { limite: 6500 } },
       'DELETE /fontes-destinos/:id': { auth: true, pathParams: { id: '3' } },
       'GET /lancamentos': { auth: true, query: { inicio: '2026-11-01', fim: '2026-11-30', pagina: '1', grupo: '' } },
-      'GET /lancamentos/:id': { auth: true, pathParams: { id: '42' } },
+      'GET /lancamentos/:id': { auth: true, pathParams: { id: '2' } },
       'POST /lancamentos': { auth: true, body: { tipo: 'saida', descricao: 'Notebook', valor: 3000, data: '2026-11-20', categoriaId: 9, fonteDestinoId: 3, parcelas: 10 } },
       'PUT /lancamentos/:id': { auth: true, pathParams: { id: '42' }, body: { descricao: 'Notebook Pro', valor: 3500 } },
       'DELETE /lancamentos/:id': { auth: true, pathParams: { id: '42' }, query: { todasParcelas: 'true' } },
